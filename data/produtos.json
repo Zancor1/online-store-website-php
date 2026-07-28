@@ -1,0 +1,18 @@
+[
+    {
+        "id": 2,
+        "nome": "Mouse Wireless Precision",
+        "preco": 190.5,
+        "categoria": "Periféricos",
+        "imagem": "https:\/\/images.unsplash.com\/photo-1527443224154-c4a3942d3acf?w=500",
+        "descricao": "Mouse sem fio ergonômico com carregamento USB-C e sensor de alta precisão que funciona até em superfícies de vidro."
+    },
+    {
+        "id": 3,
+        "nome": "Headphone Studio Sound",
+        "preco": 720,
+        "categoria": "Áudio",
+        "imagem": "https:\/\/images.unsplash.com\/photo-1505740420928-5e560c06d30e?w=500",
+        "descricao": "Headphone circumaural com cancelamento ativo de ruído e assinatura de som flat para produtores e audiófilos."
+    }
+]
