@@ -185,6 +185,10 @@ textarea {
     background: #475569;
 }
 
+.quick-purple {
+    background: #7c3aed;
+}
+
 .page-content:empty {
     display: none;
 }

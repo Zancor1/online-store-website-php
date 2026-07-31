@@ -31,6 +31,7 @@ $titulos = [
     'editar_produto' => 'Editar Produto',
     'editar_usuario' => 'Editar Usuário',
     'editar_fornecedor' => 'Editar Fornecedor',
+    'documentacao' => 'Documentacao',
 ];
 
 $tituloPagina = $titulos[$pagina] ?? 'Página não encontrada';
@@ -41,6 +42,7 @@ $navItems = [
     ['pg' => 'produtos', 'label' => 'Produtos', 'icon' => '▣', 'color' => 'yellow'],
     ['pg' => 'usuarios', 'label' => 'Equipe / Usuários', 'icon' => '●', 'color' => 'green'],
     ['pg' => 'fornecedores', 'label' => 'Fornecedores', 'icon' => '▰', 'color' => 'slate'],
+    ['pg' => 'documentacao', 'label' => 'Documentacao', 'icon' => '?', 'color' => 'purple'],
 ];
 ?>
 
