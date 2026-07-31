@@ -1,18 +1,32 @@
 [
-    {
-        "id": 2,
-        "nome": "Mouse Wireless Precision",
-        "preco": 190.5,
-        "categoria": "Periféricos",
-        "imagem": "https:\/\/images.unsplash.com\/photo-1527443224154-c4a3942d3acf?w=500",
-        "descricao": "Mouse sem fio ergonômico com carregamento USB-C e sensor de alta precisão que funciona até em superfícies de vidro."
-    },
-    {
-        "id": 3,
-        "nome": "Headphone Studio Sound",
-        "preco": 720,
-        "categoria": "Áudio",
-        "imagem": "https:\/\/images.unsplash.com\/photo-1505740420928-5e560c06d30e?w=500",
-        "descricao": "Headphone circumaural com cancelamento ativo de ruído e assinatura de som flat para produtores e audiófilos."
-    }
+  {"id":1,"nome":"Mouse Gamer Precision Pro","preco":189.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=900&q=85","descricao":"Mouse gamer ergonomico com sensor de alta precisao e iluminacao RGB."},
+  {"id":2,"nome":"Mouse Wireless Flow","preco":219.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=85","descricao":"Mouse sem fio leve, silencioso e recarregavel por USB-C."},
+  {"id":3,"nome":"Mousepad Speed XL","preco":79.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1615750185825-1fdbecb7d44d?auto=format&fit=crop&w=900&q=85","descricao":"Mousepad grande com base antiderrapante e superficie de baixo atrito."},
+  {"id":4,"nome":"Teclado Mecanico RGB","preco":349.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85","descricao":"Teclado mecanico compacto com switches rapidos e RGB configuravel."},
+  {"id":5,"nome":"Teclado Wireless Slim","preco":259.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85","descricao":"Teclado sem fio fino, ideal para estudo e trabalho."},
+  {"id":6,"nome":"Webcam Full HD","preco":199.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=900&q=85","descricao":"Webcam 1080p com microfone integrado para chamadas e streaming."},
+  {"id":7,"nome":"Controle Wireless","preco":239.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=900&q=85","descricao":"Controle sem fio com pegada confortavel para PC e jogos."},
+  {"id":8,"nome":"Hub USB-C 7 em 1","preco":149.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1625948515291-69613efd103f?auto=format&fit=crop&w=900&q=85","descricao":"Hub com USB, HDMI, leitor de cartao e energia USB-C."},
+  {"id":9,"nome":"Suporte para Headset","preco":89.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85","descricao":"Suporte de mesa resistente para organizar seu headset."},
+  {"id":10,"nome":"Kit Limpeza para Setup","preco":49.90,"categoria":"Perifericos","imagem":"https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=900&q=85","descricao":"Kit completo para limpar tela, teclado e perifericos."},
+  {"id":11,"nome":"Headphone Studio Sound","preco":720.00,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85","descricao":"Headphone circumaural com cancelamento de ruido e som detalhado."},
+  {"id":12,"nome":"Headset Gamer Surround","preco":329.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1599669454699-248893623440?auto=format&fit=crop&w=900&q=85","descricao":"Headset gamer com microfone removivel e audio surround."},
+  {"id":13,"nome":"Fone Bluetooth Air","preco":179.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=900&q=85","descricao":"Fones Bluetooth compactos com estojo de recarga."},
+  {"id":14,"nome":"Fone In Ear Bass","preco":99.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?auto=format&fit=crop&w=900&q=85","descricao":"Fone intra-auricular com graves reforcados e cabo resistente."},
+  {"id":15,"nome":"Microfone USB Stream","preco":289.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=85","descricao":"Microfone USB para lives, gravacoes e reunioes."},
+  {"id":16,"nome":"Microfone Condensador Pro","preco":469.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=85","descricao":"Microfone condensador para podcast e producao de voz."},
+  {"id":17,"nome":"Caixa de Som Bluetooth","preco":199.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=85","descricao":"Caixa de som portatil com Bluetooth e bateria de longa duracao."},
+  {"id":18,"nome":"Soundbar Compacta","preco":399.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=900&q=85","descricao":"Soundbar compacta para melhorar o som do computador ou TV."},
+  {"id":19,"nome":"Interface de Audio USB","preco":549.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=900&q=85","descricao":"Interface USB com entrada XLR para gravacoes de qualidade."},
+  {"id":20,"nome":"Braco Articulado para Microfone","preco":129.90,"categoria":"Audio","imagem":"https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=900&q=85","descricao":"Braco articulado para posicionar o microfone na mesa."},
+  {"id":21,"nome":"Placa de Video RTX Performance","preco":2899.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=900&q=85","descricao":"Placa de video para jogos em alta qualidade e criacao."},
+  {"id":22,"nome":"Processador Gamer 8 Nucleos","preco":1499.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1555617981-dac3880eac6e?auto=format&fit=crop&w=900&q=85","descricao":"Processador de 8 nucleos para games e multitarefas intensas."},
+  {"id":23,"nome":"Memoria RAM 16GB RGB","preco":429.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?auto=format&fit=crop&w=900&q=85","descricao":"Memoria DDR4 de 16GB com iluminacao RGB."},
+  {"id":24,"nome":"SSD NVMe 1TB","preco":499.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1531492746076-161ca9bcad58?auto=format&fit=crop&w=900&q=85","descricao":"SSD NVMe de 1TB com carregamentos muito mais rapidos."},
+  {"id":25,"nome":"Placa Mae ATX Gamer","preco":899.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1562976540-1502c2145186?auto=format&fit=crop&w=900&q=85","descricao":"Placa mae ATX com conectividade moderna e slots de expansao."},
+  {"id":26,"nome":"Fonte 750W 80 Plus","preco":559.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1555617778-02518510b9fa?auto=format&fit=crop&w=900&q=85","descricao":"Fonte de 750W eficiente e segura para setups potentes."},
+  {"id":27,"nome":"Gabinete Mid Tower","preco":449.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=85","descricao":"Gabinete com lateral em vidro e otimo fluxo de ar."},
+  {"id":28,"nome":"Water Cooler 240mm","preco":649.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=900&q=85","descricao":"Water cooler de 240mm para resfriamento eficiente do processador."},
+  {"id":29,"nome":"Monitor Gamer 27 Polegadas","preco":1199.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85","descricao":"Monitor 27 polegadas com alta taxa de atualizacao para jogos."},
+  {"id":30,"nome":"HD Externo 2TB","preco":429.90,"categoria":"Hardware","imagem":"https://images.unsplash.com/photo-1531492746076-161ca9bcad58?auto=format&fit=crop&w=900&q=85","descricao":"HD externo de 2TB para backups e arquivos importantes."}
 ]

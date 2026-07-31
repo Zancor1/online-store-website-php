@@ -20,9 +20,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = htmlspecialchars(trim($_POST['nome_produto'] ?? ''));
     $preco = str_replace(',', '.', trim($_POST['preco_produto'] ?? ''));
     $categoriaId = intval($_POST['categoria_produto'] ?? 0);
-    $imagem = htmlspecialchars(trim($_POST['imagem_produto'] ?? ''));
+    $imagem = '';
     $descricao = htmlspecialchars(trim($_POST['descricao_produto'] ?? ''));
     $categoriaSelecionada = null;
+    $erroImagem = null;
+    $arquivoImagem = $_FILES['imagem_produto'] ?? null;
+
+    if (!$arquivoImagem || $arquivoImagem['error'] === UPLOAD_ERR_NO_FILE) {
+        $erroImagem = 'Selecione uma imagem para o produto.';
+    } elseif ($arquivoImagem['error'] !== UPLOAD_ERR_OK) {
+        $erroImagem = 'Nao foi possivel enviar a imagem. Tente novamente.';
+    } else {
+        $tiposPermitidos = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+        $tipoImagem = mime_content_type($arquivoImagem['tmp_name']);
+        if (!isset($tiposPermitidos[$tipoImagem])) $erroImagem = 'Envie uma imagem JPG, PNG, WEBP ou GIF.';
+    }
 
     foreach ($categorias as $cat) {
         if ($cat['id'] == $categoriaId) {
@@ -31,11 +43,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (empty($nome) || empty($preco) || !$categoriaSelecionada || empty($descricao)) {
+    if ($erroImagem) {
+        $erro = $erroImagem;
+    } elseif (empty($nome) || empty($preco) || !$categoriaSelecionada || empty($descricao)) {
         $erro = "Nome, preço, categoria e descrição são obrigatórios.";
     } elseif (!is_numeric($preco) || floatval($preco) < 0) {
         $erro = "Informe um preço válido.";
     } else {
+        $pastaUploads = __DIR__ . '/../../uploads/produtos';
+        if (!is_dir($pastaUploads) && !mkdir($pastaUploads, 0755, true)) {
+            $erro = 'Nao foi possivel preparar a pasta de imagens.';
+        } else {
+            $nomeArquivo = bin2hex(random_bytes(12)) . '.' . $tiposPermitidos[$tipoImagem];
+            if (move_uploaded_file($arquivoImagem['tmp_name'], $pastaUploads . '/' . $nomeArquivo)) {
+                $imagem = 'uploads/produtos/' . $nomeArquivo;
+            } else {
+                $erro = 'Nao foi possivel salvar a imagem enviada.';
+            }
+        }
+
+        if (!$erro) {
         $novoProduto = [
             "nome" => $nome,
             "preco" => floatval($preco),
@@ -49,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST = array();
         } else {
             $erro = "Erro técnico ao tentar salvar o produto.";
+        }
         }
     }
 }
@@ -91,7 +119,7 @@ $produtos = listarProdutosAdmin();
             </div>
         <?php endif; ?>
 
-        <form action="index.php?pg=produtos" method="POST" class="space-y-4">
+        <form action="index.php?pg=produtos" method="POST" enctype="multipart/form-data" class="space-y-4">
             <div class="flex flex-col gap-2">
                 <label for="nome_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nome do Produto</label>
                 <input type="text" id="nome_produto" name="nome_produto" value="<?php echo $_POST['nome_produto'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">

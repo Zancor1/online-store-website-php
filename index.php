@@ -4,8 +4,51 @@ require_once 'includes/banco_ficticio.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
+
+    if (in_array($acao, ['login_cliente', 'registrar_cliente'], true)) {
+        $login = trim($_POST['login'] ?? '');
+        $senha = $_POST['senha'] ?? '';
+
+        if ($acao === 'registrar_cliente') {
+            $nome = trim($_POST['nome'] ?? '');
+            if ($nome === '' || !filter_var($login, FILTER_VALIDATE_EMAIL) || strlen($senha) < 6) {
+                $_SESSION['erro_login'] = 'Informe nome, email valido e uma senha com pelo menos 6 caracteres.';
+                header('Location: index.php?pg=login&modo=register'); exit;
+            }
+            if (buscarClientePorLogin($login)) {
+                $_SESSION['erro_login'] = 'Este email ja possui uma conta.';
+                header('Location: index.php?pg=login&modo=register'); exit;
+            }
+            if (!cadastrarCliente($nome, $login, $senha)) {
+                $_SESSION['erro_login'] = 'Nao foi possivel criar sua conta. Tente novamente.';
+                header('Location: index.php?pg=login&modo=register'); exit;
+            }
+            $_SESSION['cliente'] = ['nome' => $nome, 'login' => $login];
+            header('Location: index.php?pg=produtos'); exit;
+        }
+
+        $cliente = buscarClientePorLogin($login);
+        if (!$cliente || !password_verify($senha, $cliente['senha'])) {
+            $_SESSION['erro_login'] = 'Email ou senha invalidos.';
+            header('Location: index.php?pg=login'); exit;
+        }
+        $_SESSION['cliente'] = ['nome' => $cliente['nome'], 'login' => $cliente['login']];
+        header('Location: index.php?pg=produtos'); exit;
+    }
     $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
     $carrinho = $_SESSION['carrinho'] ?? [];
+
+    if ($acao === 'logout') {
+        unset($_SESSION['cliente']);
+        header('Location: index.php');
+        exit;
+    }
+
+    if ($acao === 'adicionar' && empty($_SESSION['cliente'])) {
+        $_SESSION['mensagem_login'] = 'Entre ou crie uma conta para adicionar itens ao carrinho.';
+        header('Location: index.php?pg=login');
+        exit;
+    }
 
     if ($acao === 'adicionar' && $id && buscarProdutoPorId($id)) {
         $quantidade = filter_input(INPUT_POST, 'quantidade', FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1, 'max_range' => 99]]);
@@ -25,17 +68,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($acao === 'finalizar') {
+        if (empty($_SESSION['cliente'])) {
+            $_SESSION['mensagem_login'] = 'Faca login para finalizar sua compra.';
+            header('Location: index.php?pg=login');
+            exit;
+        }
+
+        $endereco = trim($_POST['endereco'] ?? '');
+        $cidade = trim($_POST['cidade'] ?? '');
+        $cep = trim($_POST['cep'] ?? '');
+        if ($endereco === '' || $cidade === '' || $cep === '') {
+            header('Location: index.php?pg=checkout');
+            exit;
+        }
+
         if (!empty($carrinho)) {
             $_SESSION['carrinho'] = [];
             $_SESSION['pedido_finalizado'] = true;
+            $_SESSION['endereco_pedido'] = ['endereco' => $endereco, 'cidade' => $cidade, 'cep' => $cep];
         }
         header('Location: index.php?pg=carrinho');
         exit;
     }
 }
 
-$pagina = $_GET['pg'] ?? 'produtos';
+$pagina = $_GET['pg'] ?? 'inicio';
+if ($pagina === 'checkout' && empty($_SESSION['cliente'])) {
+    header('Location: index.php?pg=login');
+    exit;
+}
 $quantidadeCarrinho = array_sum($_SESSION['carrinho'] ?? []);
+$clienteLogado = $_SESSION['cliente'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -47,7 +110,7 @@ $quantidadeCarrinho = array_sum($_SESSION['carrinho'] ?? []);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sen:wght@400;700;800&display=swap" rel="stylesheet">
-    <title>Pixel Store | <?php echo $pagina === 'contato' ? 'Contato' : 'Tecnologia para o seu setup'; ?></title>
+    <title>Pixel Store | <?php echo $pagina === 'contato' ? 'Contato' : ($pagina === 'beneficios' ? 'Por que escolher' : 'Tecnologia para o seu setup'); ?></title>
     <style>
         body { font-family: Sen, ui-sans-serif, system-ui, sans-serif; }
         .hero-bg { background-image: linear-gradient(90deg, rgba(13,18,31,.92), rgba(13,18,31,.52)), url('https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=2000&q=85'); }
@@ -57,33 +120,47 @@ $quantidadeCarrinho = array_sum($_SESSION['carrinho'] ?? []);
 <body class="min-h-screen bg-[#101725] text-white antialiased">
     <header class="sticky top-0 z-50 border-b border-white/10 bg-[#101725]/95 backdrop-blur">
         <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-5">
-            <a href="index.php?pg=produtos" class="flex items-center gap-3 text-xl font-extrabold tracking-[.16em]">
+            <a href="index.php" class="flex items-center gap-3 text-xl font-extrabold tracking-[.16em]">
                 <span class="grid h-10 w-10 place-items-center rounded-lg bg-blue-500 text-xl shadow-lg shadow-blue-500/30"><i class="ph ph-cube"></i></span>
                 PIXEL <span class="text-blue-400">STORE</span>
             </a>
             <nav class="hidden items-center gap-9 text-sm font-bold text-slate-300 md:flex">
-                <a href="index.php?pg=produtos" class="transition hover:text-white <?php echo $pagina === 'produtos' ? 'text-white' : ''; ?>">Produtos</a>
-                <a href="#beneficios" class="transition hover:text-white">Por que escolher</a>
+                <a href="index.php" class="transition hover:text-white <?php echo $pagina === 'inicio' ? 'text-white' : ''; ?>">Inicio</a>
+                <a href="index.php?pg=produtos" class="transition hover:text-white <?php echo $pagina === 'produtos' ? 'text-white' : ''; ?>">Ver Produtos</a>
                 <a href="index.php?pg=contato" class="transition hover:text-white <?php echo $pagina === 'contato' ? 'text-white' : ''; ?>">Contato</a>
             </nav>
-            <a href="index.php?pg=carrinho" class="relative grid h-10 w-10 place-items-center rounded-full border border-white/15 text-xl transition hover:border-blue-400 hover:text-blue-300" aria-label="Abrir carrinho">
-                <i class="ph ph-shopping-cart"></i><span class="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-blue-500 text-[10px] font-black"><?php echo $quantidadeCarrinho; ?></span>
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="index.php?pg=carrinho" class="relative grid h-10 w-10 place-items-center rounded-full border border-white/15 text-xl transition hover:border-blue-400 hover:text-blue-300" aria-label="Abrir carrinho">
+                    <i class="ph ph-shopping-cart"></i><span class="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-blue-500 text-[10px] font-black"><?php echo $quantidadeCarrinho; ?></span>
+                </a>
+                <?php if ($clienteLogado): ?>
+                    <details class="relative">
+                        <summary class="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full border border-blue-400/50 bg-blue-500/10 text-xl text-blue-300 transition hover:bg-blue-500 hover:text-white [&::-webkit-details-marker]:hidden" title="Abrir menu da conta" aria-label="Abrir menu da conta"><i class="ph ph-user"></i></summary>
+                        <div class="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#202636] shadow-2xl shadow-black/50">
+                            <div class="border-b border-white/10 px-5 py-4"><p class="font-extrabold text-white"><?php echo htmlspecialchars($clienteLogado['nome']); ?></p><p class="mt-1 text-sm text-slate-400"><?php echo htmlspecialchars($clienteLogado['login']); ?></p></div>
+                            <div class="p-2"><button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-white/10"><i class="ph ph-user-circle text-xl"></i> Conta</button><form method="post" action="index.php"><input type="hidden" name="acao" value="logout"><button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-red-500/15 hover:text-red-200"><i class="ph ph-sign-out text-xl"></i> Desconectar</button></form></div>
+                        </div>
+                    </details>
+                <?php else: ?>
+                    <a href="index.php?pg=login" class="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-xl text-slate-200 transition hover:border-blue-400 hover:text-blue-300" aria-label="Login" title="Login"><i class="ph ph-user"></i></a>
+                <?php endif; ?>
+            </div>
         </div>
     </header>
 
     <main>
-        <?php if ($pagina === 'produtos'): ?>
+        <?php if ($pagina === 'inicio'): ?>
             <section class="hero-bg grid-glow relative overflow-hidden bg-cover bg-center">
                 <div class="mx-auto flex min-h-[480px] max-w-6xl flex-col justify-center px-5 py-20">
                     <p class="mb-5 text-sm font-bold uppercase tracking-[.28em] text-blue-300">Tecnologia que acompanha você</p>
                     <h1 class="max-w-3xl text-4xl font-extrabold leading-tight md:text-6xl">Seu melhor setup começa aqui.</h1>
                     <p class="mt-6 max-w-xl text-base leading-7 text-slate-300 md:text-lg">Produtos selecionados para melhorar sua rotina, seu trabalho e cada momento de jogo.</p>
-                    <div class="mt-9"><a href="#catalogo" class="inline-flex items-center gap-2 rounded-md bg-blue-500 px-6 py-3 text-sm font-extrabold uppercase tracking-wide transition hover:bg-blue-400">Explorar produtos <i class="ph ph-arrow-down"></i></a></div>
+                    <div class="mt-9"><a href="index.php?pg=produtos" class="inline-flex items-center gap-2 rounded-md bg-blue-500 px-6 py-3 text-sm font-extrabold uppercase tracking-wide transition hover:bg-blue-400">Explorar produtos <i class="ph ph-arrow-right"></i></a></div>
                 </div>
             </section>
         <?php endif; ?>
 
+        <?php if ($pagina !== 'inicio'): ?>
         <div id="catalogo" class="mx-auto max-w-6xl px-5 py-16 md:py-20">
             <?php
             $arquivo = 'pages/' . basename($pagina) . '.php';
@@ -94,8 +171,9 @@ $quantidadeCarrinho = array_sum($_SESSION['carrinho'] ?? []);
             }
             ?>
         </div>
+        <?php endif; ?>
 
-        <?php if ($pagina === 'produtos'): ?>
+        <?php if (false): ?>
         <section id="beneficios" class="border-y border-white/10 bg-[#151e30]">
             <div class="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-3">
                 <div><i class="ph ph-package text-4xl text-blue-400"></i><h2 class="mt-5 text-lg font-extrabold">Produtos selecionados</h2><p class="mt-2 text-sm leading-6 text-slate-400">Tecnologia útil, bonita e pronta para o seu dia a dia.</p></div>

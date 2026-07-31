@@ -1,6 +1,5 @@
 [
-    {
-        "nome": "ads",
-        "id": 1
-    }
+  {"id": 1, "nome": "Perifericos"},
+  {"id": 2, "nome": "Audio"},
+  {"id": 3, "nome": "Hardware"}
 ]

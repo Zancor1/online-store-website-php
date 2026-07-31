@@ -20,7 +20,7 @@
         return lerBancoJson();
     }
     //Busca e retorna apenas um produto pelo uid
-    function buscarProdutoPorId($id){
+function buscarProdutoPorId($id){
         $produto = lerBancoJson();
         foreach($produto as $p){
             if ($p['id'] == $id){
@@ -72,6 +72,36 @@
         }
     }
     return false;
+}
+
+// Clientes da loja: separados dos usuarios do painel administrativo.
+function caminhoClientes() {
+    return __DIR__ . '/../data/clientes.json';
+}
+
+function listarClientes() {
+    $caminho = caminhoClientes();
+    if (!file_exists($caminho)) return [];
+    return json_decode(file_get_contents($caminho), true) ?? [];
+}
+
+function buscarClientePorLogin($login) {
+    foreach (listarClientes() as $cliente) {
+        if (strtolower($cliente['login']) === strtolower($login)) return $cliente;
+    }
+    return null;
+}
+
+function cadastrarCliente($nome, $login, $senha) {
+    $clientes = listarClientes();
+    $clientes[] = [
+        'id' => empty($clientes) ? 1 : max(array_column($clientes, 'id')) + 1,
+        'nome' => $nome,
+        'login' => $login,
+        'senha' => password_hash($senha, PASSWORD_DEFAULT),
+        'criado_em' => date('c')
+    ];
+    return file_put_contents(caminhoClientes(), json_encode($clientes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX) !== false;
 }
 
     function buscarUsuarioPorId($id) {
