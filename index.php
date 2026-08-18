@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'includes/banco_ficticio.php';
+require_once 'includes/seguranca.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
@@ -23,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['erro_login'] = 'Nao foi possivel criar sua conta. Tente novamente.';
                 header('Location: index.php?pg=login&modo=register'); exit;
             }
+            regenerarSessao();
             $_SESSION['cliente'] = ['nome' => $nome, 'login' => $login];
             header('Location: index.php?pg=produtos'); exit;
         }
@@ -32,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['erro_login'] = 'Email ou senha invalidos.';
             header('Location: index.php?pg=login'); exit;
         }
+        regenerarSessao();
         $_SESSION['cliente'] = ['nome' => $cliente['nome'], 'login' => $cliente['login']];
         header('Location: index.php?pg=produtos'); exit;
     }
@@ -50,17 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($acao === 'adicionar' && $id && buscarProdutoPorId($id)) {
+    if ($acao === 'adicionar' && $id && ($produto = buscarProdutoPorId($id))) {
         $quantidade = filter_input(INPUT_POST, 'quantidade', FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1, 'max_range' => 99]]);
-        $carrinho[$id] = min(($carrinho[$id] ?? 0) + $quantidade, 99);
+        $variacao = filter_input(INPUT_POST, 'variacao', FILTER_VALIDATE_INT, ['options' => ['default' => -1, 'min_range' => 0]]);
+        $variacoes = $produto['variacoes'] ?? [];
+        if (!empty($variacoes) && !isset($variacoes[$variacao])) {
+            $_SESSION['mensagem_carrinho'] = 'Selecione uma variacao valida antes de adicionar ao carrinho.';
+            header('Location: index.php?pg=detalhe&id=' . $id);
+            exit;
+        }
+        $chaveItem = !empty($variacoes) ? $id . ':' . $variacao : (string) $id;
+        $carrinho[$chaveItem] = min(($carrinho[$chaveItem] ?? 0) + $quantidade, 99);
         $_SESSION['carrinho'] = $carrinho;
         $_SESSION['mensagem_carrinho'] = 'Produto adicionado ao carrinho.';
         header('Location: index.php?pg=carrinho');
         exit;
     }
 
-    if ($acao === 'remover' && $id) {
-        unset($carrinho[$id]);
+    if ($acao === 'remover') {
+        $chaveItem = (string) ($_POST['item'] ?? $id ?? '');
+        unset($carrinho[$chaveItem]);
         $_SESSION['carrinho'] = $carrinho;
         $_SESSION['mensagem_carrinho'] = 'Produto removido do carrinho.';
         header('Location: index.php?pg=carrinho');
@@ -83,6 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($carrinho)) {
+            $resumo = montarItensPedido($carrinho);
+            salvarPedido([
+                'cliente' => $_SESSION['cliente'],
+                'endereco' => ['endereco' => $endereco, 'cidade' => $cidade, 'cep' => $cep],
+                'itens' => $resumo['itens'],
+                'total' => $resumo['total'],
+                'status' => 'pendente',
+                'criado_em' => date('c'),
+            ]);
             $_SESSION['carrinho'] = [];
             $_SESSION['pedido_finalizado'] = true;
             $_SESSION['endereco_pedido'] = ['endereco' => $endereco, 'cidade' => $cidade, 'cep' => $cep];
@@ -127,6 +148,7 @@ $clienteLogado = $_SESSION['cliente'] ?? null;
             <nav class="hidden items-center gap-9 text-sm font-bold text-slate-300 md:flex">
                 <a href="index.php" class="transition hover:text-white <?php echo $pagina === 'inicio' ? 'text-white' : ''; ?>">Inicio</a>
                 <a href="index.php?pg=produtos" class="transition hover:text-white <?php echo $pagina === 'produtos' ? 'text-white' : ''; ?>">Ver Produtos</a>
+                <a href="index.php?pg=beneficios" class="transition hover:text-white <?php echo $pagina === 'beneficios' ? 'text-white' : ''; ?>">Beneficios</a>
                 <a href="index.php?pg=contato" class="transition hover:text-white <?php echo $pagina === 'contato' ? 'text-white' : ''; ?>">Contato</a>
             </nav>
             <div class="flex items-center gap-3">

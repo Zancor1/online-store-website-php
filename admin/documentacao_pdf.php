@@ -1,6 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['logado'])) { http_response_code(403); exit('Acesso não autorizado.'); }
+require_once __DIR__ . '/../includes/markdown.php';
 
 function pdfEscape($text) { return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $text); }
 function pdfText($text) { return iconv('UTF-8', 'Windows-1252//TRANSLIT', $text) ?: $text; }
@@ -51,6 +52,8 @@ $sections = [
     ['6. CADASTROS NO PAINEL', [
         'Categorias: clique em Categorias, informe o nome e clique em Criar Categoria. Use Editar ou Remover na listagem.',
         'Produtos: clique em Produtos, preencha nome, preço, categoria, imagem e descrição e clique em Cadastrar Produto.',
+        'Variações: marque a opção de variações para cadastrar tamanhos, cores ou modelos. Cada opção precisa de nome e imagem própria.',
+        'Exemplo: em um tênis, cadastre Tamanho 38, 39 e 40. O cliente escolhe a opção, vê a foto correspondente e o carrinho registra a variação.',
         'Imagens de produto aceitas: JPG, PNG, WEBP e GIF.',
         'Administradores: em Equipe / Usuários, informe nome, usuário de login e senha para criar um novo acesso.',
         'Fornecedores: informe nome, CNPJ, telefone, CEP, rua, número, bairro e cidade e clique em Cadastrar Fornecedor.',
@@ -64,7 +67,7 @@ $sections = [
         'Boa prática: não remova uma categoria sem verificar se ela já é usada por produtos.'
     ]],
     ['8. DADOS E ARMAZENAMENTO', [
-        'data/produtos.json: produtos exibidos no catálogo.',
+        'data/produtos.json: produtos exibidos no catálogo, incluindo suas variações.',
         'data/categorias.json: categorias disponíveis.',
         'data/clientes.json: contas de clientes da loja.',
         'data/usuarios.json: acessos de administradores.',
@@ -75,11 +78,22 @@ $sections = [
     ['9. DÚVIDAS FREQUENTES', [
         'Não consigo adicionar ao carrinho: faça login em uma conta de cliente.',
         'Não aparece categoria no cadastro do produto: cadastre uma categoria antes de criar o produto.',
+        'Para cadastrar tamanhos ou cores: ative as variações, informe o nome de cada opção e envie a imagem correspondente.',
         'Quais imagens são aceitas: JPG, PNG, WEBP e GIF.',
         'O pedido está pago após finalizar: não; a finalização é apenas simulada.',
         'Como salvar o manual: clique em Baixar em PDF no topo da página Documentação.'
     ]]
 ];
+
+// Anexa o conteúdo integral dos arquivos da pasta docs/ (documentação acadêmica completa)
+// como páginas adicionais do PDF, lido diretamente dos .md do projeto.
+$sections[] = ['10. DOCUMENTAÇÃO TÉCNICA COMPLETA (PASTA docs/)', [
+    'As páginas a seguir reproduzem o conteúdo integral de cada arquivo Markdown da pasta docs/, na mesma ordem do índice de docs/README.md.'
+]];
+$docsFolder = __DIR__ . '/../docs/';
+foreach (docsFileList() as $doc) {
+    $sections = array_merge($sections, docsFileToPdfSections($docsFolder . $doc['file'], $doc['title']));
+}
 
 $pages = []; $lines = [];
 foreach ($sections as [$title, $items]) {

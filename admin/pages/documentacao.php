@@ -1,3 +1,10 @@
+<?php
+// Carrega os arquivos reais da pasta docs/ (raiz do projeto) para exibir o
+// conteúdo completo aqui dentro, além do resumo já existente abaixo.
+require_once __DIR__ . '/../../includes/markdown.php';
+$docsFolder = __DIR__ . '/../../docs/';
+$docsList = docsFileList();
+?>
 <style>
     .docs { display: grid; gap: 20px; color: #d1d5db; }
     .docs-card { padding: 24px; border: 1px solid #374151; border-radius: 12px; background: #1f2937; }
@@ -12,6 +19,31 @@
     .docs-toc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }.docs-toc a { padding: 10px; border-radius: 7px; background: #111827; color: #c4b5fd; font-size: 13px; font-weight: 700; }.docs-toc a:hover { background: #312e81; color: #fff; }
     .docs-table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 14px; }.docs-table th, .docs-table td { padding: 11px; border: 1px solid #374151; text-align: left; vertical-align: top; }.docs-table th { background: #111827; color: #fff; }
     @media (max-width: 700px) { .docs-grid, .docs-toc { grid-template-columns: 1fr; }.docs-card { padding: 18px; }.docs-hero { align-items: flex-start; flex-direction: column; }.docs-download { width: 100%; } }
+
+    /* Conteúdo renderizado a partir dos arquivos .md da pasta docs/ */
+    .docs-doc { border: 1px solid #374151; border-radius: 10px; background: #161c2b; overflow: hidden; }
+    .docs-doc + .docs-doc { margin-top: 12px; }
+    .docs-doc summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; color: #f3f4f6; font-size: 14px; }
+    .docs-doc summary::-webkit-details-marker { display: none; }
+    .docs-doc summary .docs-doc-file { font-weight: 500; color: #9ca3af; font-size: 12px; font-family: monospace; }
+    .docs-doc summary::after { content: '+'; font-size: 18px; color: #a78bfa; }
+    .docs-doc[open] summary::after { content: '−'; }
+    .docs-doc-body { padding: 4px 20px 20px; border-top: 1px solid #374151; }
+    .md-h1, .md-h2 { color: #fff; font-weight: 800; margin: 18px 0 8px; }
+    .md-h1 { font-size: 19px; }
+    .md-h2 { font-size: 16px; }
+    .md-h3, .md-h4 { color: #e5e7eb; font-weight: 700; margin: 14px 0 6px; font-size: 14px; }
+    .md-p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.7; color: #d1d5db; }
+    .md-list { margin: 8px 0 0; padding-left: 20px; font-size: 13.5px; line-height: 1.75; color: #d1d5db; }
+    .md-list li { margin-bottom: 3px; }
+    .md-pre { margin: 10px 0 0; padding: 12px 14px; border-radius: 8px; background: #0b0f19; overflow-x: auto; }
+    .md-pre code { background: none; padding: 0; color: #93c5fd; font-size: 12.5px; white-space: pre; }
+    .md-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13px; }
+    .md-table th, .md-table td { padding: 8px 10px; border: 1px solid #374151; text-align: left; vertical-align: top; }
+    .md-table th { background: #111827; color: #fff; }
+    .md-quote { margin: 10px 0 0; padding: 10px 14px; border-left: 3px solid #6366f1; background: rgb(99 102 241 / .08); font-style: italic; color: #c7d2fe; font-size: 13.5px; }
+    .md-hr { border: none; border-top: 1px solid #374151; margin: 16px 0; }
+    .md-link { color: #a78bfa; text-decoration: underline; text-decoration-style: dotted; }
 </style>
 
 <section class="docs">
@@ -27,6 +59,7 @@
     <article class="docs-card">
         <h2>Índice</h2>
         <nav class="docs-toc" aria-label="Índice da documentação">
+            <a href="#academica">0. Documentação acadêmica</a>
             <a href="#apresentacao">1. Apresentação</a>
             <a href="#publico">2. Área pública</a>
             <a href="#conta">3. Conta do cliente</a>
@@ -36,7 +69,22 @@
             <a href="#ordem">7. Ordem de cadastro</a>
             <a href="#dados">8. Dados do sistema</a>
             <a href="#duvidas">9. Dúvidas frequentes</a>
+            <a href="#docs-completa">10. Documentação completa (docs/)</a>
         </nav>
+    </article>
+
+    <article class="docs-card" id="academica">
+        <h2>0. Documentação acadêmica completa</h2>
+        <p>A documentação técnica completa para entrega acadêmica está na pasta <code>docs/</code> na raiz do projeto, e o conteúdo de cada arquivo também é exibido integralmente logo abaixo, na seção <a href="#docs-completa">10. Documentação completa</a> — e incluído no PDF baixado pelo botão acima.</p>
+        <table class="docs-table">
+            <thead><tr><th>Documento</th><th>Conteúdo</th></tr></thead>
+            <tbody>
+                <?php foreach ($docsList as $doc): if ($doc['slug'] === 'readme') continue; ?>
+                <tr><td><a class="md-link" href="#doc-<?php echo $doc['slug']; ?>"><code>docs/<?php echo $doc['file']; ?></code></a></td><td><?php echo htmlspecialchars($doc['title']); ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <p class="docs-note"><strong>Importante:</strong> a documentação acadêmica descreve somente funcionalidades existentes no código. Itens como pagamento, frete, estoque e MySQL estão listados como não implementados.</p>
     </article>
 
     <article class="docs-card" id="apresentacao">
@@ -53,7 +101,8 @@
                 <tr><td>CSS3</td><td>Estilos, responsividade e aparência visual das telas.</td></tr>
                 <tr><td>JavaScript</td><td>Interações executadas no navegador.</td></tr>
                 <tr><td>PHP</td><td>Regras do sistema, sessões, login, cadastros e geração do PDF.</td></tr>
-                <tr><td>JSON</td><td>Armazenamento local de produtos, clientes, usuários, categorias e fornecedores.</td></tr>
+                <tr><td>Tailwind CSS (CDN)</td><td>Estilos responsivos da loja pública.</td></tr>
+                <tr><td>JSON</td><td>Armazenamento local de produtos, clientes, usuários, categorias, fornecedores e pedidos.</td></tr>
             </tbody>
         </table>
     </article>
@@ -179,10 +228,12 @@
                 <li>No painel, clique em <strong>Produtos</strong>.</li>
                 <li>Preencha nome, preço e descrição.</li>
                 <li>Selecione uma categoria já cadastrada.</li>
-                <li>Escolha uma imagem para o produto.</li>
+                <li>Escolha uma imagem para o produto. Para item simples, esta será a foto exibida na loja.</li>
+                <li>Se o item tiver opções, marque <strong>Este produto possui variações</strong>.</li>
+                <li>Adicione cada variação, como <strong>Tamanho 38</strong>, e envie uma imagem própria para ela.</li>
                 <li>Clique em <strong>Cadastrar Produto</strong>.</li>
             </ol>
-            <p>São aceitas imagens JPG, PNG, WEBP e GIF. Para retirar um produto da vitrine, use o botão <strong>Remover</strong> presente na listagem.</p>
+            <p>Exemplo: para um tênis, cadastre Tamanho 38, 39 e 40. Na página do produto, o cliente escolhe a opção e vê a respectiva imagem; o carrinho registra a variação selecionada. São aceitas imagens JPG, PNG, WEBP e GIF. Para retirar um produto da vitrine, use o botão <strong>Remover</strong> presente na listagem.</p>
         </article>
     </div>
 
@@ -229,11 +280,12 @@
         <table class="docs-table">
             <thead><tr><th>Local</th><th>Conteúdo</th></tr></thead>
             <tbody>
-                <tr><td><code>data/produtos.json</code></td><td>Produtos exibidos no catálogo.</td></tr>
+                <tr><td><code>data/produtos.json</code></td><td>Produtos exibidos no catálogo, incluindo nome e imagem de cada variação.</td></tr>
                 <tr><td><code>data/categorias.json</code></td><td>Categorias disponíveis para os produtos.</td></tr>
                 <tr><td><code>data/clientes.json</code></td><td>Contas criadas pelos clientes da loja.</td></tr>
                 <tr><td><code>data/usuarios.json</code></td><td>Usuários com acesso ao painel administrativo.</td></tr>
                 <tr><td><code>data/fornecedores.json</code></td><td>Dados comerciais dos fornecedores.</td></tr>
+                <tr><td><code>data/pedidos.json</code></td><td>Pedidos finalizados pelos clientes (checkout simulado).</td></tr>
                 <tr><td><code>uploads/produtos/</code></td><td>Imagens enviadas ao cadastrar produtos.</td></tr>
             </tbody>
         </table>
@@ -248,9 +300,29 @@
         <p>Cadastre uma categoria no painel administrativo antes de iniciar o cadastro do produto.</p>
         <h3>Quais imagens posso enviar?</h3>
         <p>O cadastro de produtos aceita arquivos JPG, PNG, WEBP e GIF.</p>
+        <h3>Como cadastro tamanhos, cores ou outros modelos?</h3>
+        <p>Marque a opção de variações no cadastro do produto, adicione uma linha para cada opção e envie a foto correspondente. Cada variação precisa ter nome e imagem.</p>
         <h3>O pedido já está pago depois de finalizado?</h3>
         <p>Não. A finalização atual é apenas uma simulação e não possui integração com pagamento ou cálculo de frete.</p>
         <h3>Como salvar esta documentação?</h3>
         <p>Clique no botão <strong>Baixar em PDF</strong> no topo da página. O navegador fará o download do manual em formato PDF.</p>
+    </article>
+
+    <article class="docs-card" id="docs-completa">
+        <h2>10. Documentação completa (arquivos da pasta docs/)</h2>
+        <p>Abaixo está o conteúdo integral de cada arquivo Markdown da pasta <code>docs/</code>, lido diretamente do projeto — ou seja, sempre que um arquivo em <code>docs/</code> for atualizado, o texto exibido aqui (e no PDF baixado) acompanha a mudança automaticamente. Clique no título de um documento para abrir ou fechar o conteúdo.</p>
+        <div class="docs-doclist">
+            <?php foreach ($docsList as $doc): ?>
+                <details class="docs-doc" id="doc-<?php echo $doc['slug']; ?>">
+                    <summary>
+                        <span><?php echo htmlspecialchars($doc['title']); ?></span>
+                        <span class="docs-doc-file">docs/<?php echo $doc['file']; ?></span>
+                    </summary>
+                    <div class="docs-doc-body">
+                        <?php echo docsFileToHtml($docsFolder . $doc['file']); ?>
+                    </div>
+                </details>
+            <?php endforeach; ?>
+        </div>
     </article>
 </section>

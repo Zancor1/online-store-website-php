@@ -1,6 +1,7 @@
 <?php
-// Inicia o sistema de sessões para podermos verificar quem está acessando
 session_start();
+require_once __DIR__ . '/../includes/banco_ficticio.php';
+require_once __DIR__ . '/../includes/seguranca.php';
 
 // SEGURANÇA: Se a variável 'logado' não existir na sessão, significa que o usuário não fez login
 if (!isset($_SESSION['logado'])) {
@@ -52,7 +53,7 @@ $navItems = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Administrativo | MinimalShop</title>
+    <title>Painel Administrativo | Pixel Store</title>
     <link rel="stylesheet" href="admin.css">
 </head>
 

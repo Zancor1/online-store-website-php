@@ -4,6 +4,15 @@ require_once "../includes/banco_ficticio.php";
 $erro = null;
 $sucesso = null;
 
+function salvarImagemProduto($arquivo, $pastaUploads, $tiposPermitidos) {
+    if (!$arquivo || ($arquivo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) return null;
+    $tipoImagem = mime_content_type($arquivo['tmp_name']);
+    if (!isset($tiposPermitidos[$tipoImagem])) return null;
+    $nomeArquivo = bin2hex(random_bytes(12)) . '.' . $tiposPermitidos[$tipoImagem];
+    if (!move_uploaded_file($arquivo['tmp_name'], $pastaUploads . '/' . $nomeArquivo)) return null;
+    return 'uploads/produtos/' . $nomeArquivo;
+}
+
 if (isset($_GET['excluir'])) {
     $idExcluir = intval($_GET['excluir']);
 
@@ -25,15 +34,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoriaSelecionada = null;
     $erroImagem = null;
     $arquivoImagem = $_FILES['imagem_produto'] ?? null;
+    $tiposPermitidos = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    $usarVariacoes = !empty($_POST['usar_variacoes']);
+    $nomesVariacoes = $_POST['variacao_nome'] ?? [];
+    $arquivosVariacoes = $_FILES['variacao_imagem'] ?? null;
 
-    if (!$arquivoImagem || $arquivoImagem['error'] === UPLOAD_ERR_NO_FILE) {
+    if (!$usarVariacoes && (!$arquivoImagem || $arquivoImagem['error'] === UPLOAD_ERR_NO_FILE)) {
         $erroImagem = 'Selecione uma imagem para o produto.';
-    } elseif ($arquivoImagem['error'] !== UPLOAD_ERR_OK) {
+    } elseif (!$usarVariacoes && $arquivoImagem['error'] !== UPLOAD_ERR_OK) {
         $erroImagem = 'Nao foi possivel enviar a imagem. Tente novamente.';
-    } else {
-        $tiposPermitidos = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-        $tipoImagem = mime_content_type($arquivoImagem['tmp_name']);
-        if (!isset($tiposPermitidos[$tipoImagem])) $erroImagem = 'Envie uma imagem JPG, PNG, WEBP ou GIF.';
+    } elseif (!$usarVariacoes && !isset($tiposPermitidos[mime_content_type($arquivoImagem['tmp_name'])])) {
+        $erroImagem = 'Envie uma imagem JPG, PNG, WEBP ou GIF.';
+    } elseif ($usarVariacoes) {
+        $quantidadeVariacoes = is_array($nomesVariacoes) ? count($nomesVariacoes) : 0;
+        if ($quantidadeVariacoes < 1) {
+            $erroImagem = 'Adicione pelo menos uma variacao.';
+        }
+        for ($i = 0; !$erroImagem && $i < $quantidadeVariacoes; $i++) {
+            $arquivo = $arquivosVariacoes ? ['name' => $arquivosVariacoes['name'][$i] ?? '', 'tmp_name' => $arquivosVariacoes['tmp_name'][$i] ?? '', 'error' => $arquivosVariacoes['error'][$i] ?? UPLOAD_ERR_NO_FILE, 'size' => $arquivosVariacoes['size'][$i] ?? 0] : null;
+            if (trim($nomesVariacoes[$i] ?? '') === '' || !$arquivo || $arquivo['error'] !== UPLOAD_ERR_OK || !isset($tiposPermitidos[mime_content_type($arquivo['tmp_name'])])) {
+                $erroImagem = 'Cada variacao precisa ter um nome e uma imagem JPG, PNG, WEBP ou GIF.';
+            }
+        }
     }
 
     foreach ($categorias as $cat) {
@@ -54,11 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir($pastaUploads) && !mkdir($pastaUploads, 0755, true)) {
             $erro = 'Nao foi possivel preparar a pasta de imagens.';
         } else {
-            $nomeArquivo = bin2hex(random_bytes(12)) . '.' . $tiposPermitidos[$tipoImagem];
-            if (move_uploaded_file($arquivoImagem['tmp_name'], $pastaUploads . '/' . $nomeArquivo)) {
-                $imagem = 'uploads/produtos/' . $nomeArquivo;
+            $variacoes = [];
+            if ($usarVariacoes) {
+                foreach ($nomesVariacoes as $i => $nomeVariacao) {
+                    $arquivo = ['name' => $arquivosVariacoes['name'][$i], 'tmp_name' => $arquivosVariacoes['tmp_name'][$i], 'error' => $arquivosVariacoes['error'][$i], 'size' => $arquivosVariacoes['size'][$i]];
+                    $imagemVariacao = salvarImagemProduto($arquivo, $pastaUploads, $tiposPermitidos);
+                    if (!$imagemVariacao) { $erro = 'Nao foi possivel salvar uma das imagens das variacoes.'; break; }
+                    $variacoes[] = ['nome' => htmlspecialchars(trim($nomeVariacao)), 'imagem' => $imagemVariacao];
+                }
+                $imagem = $variacoes[0]['imagem'] ?? '';
             } else {
-                $erro = 'Nao foi possivel salvar a imagem enviada.';
+                $imagem = salvarImagemProduto($arquivoImagem, $pastaUploads, $tiposPermitidos);
+                if (!$imagem) $erro = 'Nao foi possivel salvar a imagem enviada.';
             }
         }
 
@@ -68,7 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "preco" => floatval($preco),
             "categoria" => $categoriaSelecionada['nome'],
             "imagem" => $imagem,
-            "descricao" => $descricao
+            "descricao" => $descricao,
+            "variacoes" => $variacoes ?? []
         ];
 
         if (salvarProdutoAdmin($novoProduto)) {
@@ -144,7 +174,17 @@ $produtos = listarProdutosAdmin();
 
             <div class="flex flex-col gap-2">
                 <label for="imagem_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Imagem do Produto</label>
-                <input type="file" id="imagem_produto" name="imagem_produto" accept="image/*" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="file" id="imagem_produto" name="imagem_produto" accept="image/jpeg,image/png,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+            </div>
+
+            <div class="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                <label class="flex cursor-pointer items-center gap-3 text-sm font-bold text-gray-700">
+                    <input type="checkbox" id="usar_variacoes" name="usar_variacoes" value="1" <?php echo !empty($_POST['usar_variacoes']) ? 'checked' : ''; ?> class="h-4 w-4 rounded border-gray-300 text-indigo-600">
+                    Este produto possui variações (tamanho, cor, modelo...)
+                </label>
+                <p class="mt-2 text-xs leading-5 text-gray-500">Ao ativar, informe cada opção e envie uma foto específica para ela. Ex.: tamanho 38, tamanho 39 e tamanho 40.</p>
+                <div id="variacoes_campos" class="mt-4 space-y-3" <?php echo empty($_POST['usar_variacoes']) ? 'hidden' : ''; ?>></div>
+                <button type="button" id="adicionar_variacao" class="mt-3 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100" <?php echo empty($_POST['usar_variacoes']) ? 'hidden' : ''; ?>>+ Adicionar variação</button>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -165,6 +205,7 @@ $produtos = listarProdutosAdmin();
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Produto</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Categoria</th>
+                    <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variações</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Preço</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Ações</th>
                 </tr>
@@ -172,7 +213,7 @@ $produtos = listarProdutosAdmin();
             <tbody class="divide-y divide-gray-50">
                 <?php if (empty($produtos)): ?>
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-sm text-gray-400">Nenhum produto cadastrado ainda.</td>
+                        <td colspan="6" class="p-8 text-center text-sm text-gray-400">Nenhum produto cadastrado ainda.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($produtos as $produto): ?>
@@ -180,6 +221,7 @@ $produtos = listarProdutosAdmin();
                             <td class="p-4 text-sm text-gray-400 font-mono">#<?php echo $produto['id']; ?></td>
                             <td class="p-4 font-bold text-gray-700"><?php echo $produto['nome']; ?></td>
                             <td class="p-4 text-sm text-gray-500"><?php echo $produto['categoria'] ?? 'Sem categoria'; ?></td>
+                            <td class="p-4 text-sm text-gray-500"><?php echo empty($produto['variacoes']) ? 'Produto único' : count($produto['variacoes']) . ' opções'; ?></td>
                             <td class="p-4 text-sm text-gray-500">R$ <?php echo number_format(floatval($produto['preco'] ?? 0), 2, ',', '.'); ?></td>
                             <td class="p-4 text-right">
                                 <div class="action-group">
@@ -195,3 +237,29 @@ $produtos = listarProdutosAdmin();
         </table>
     </div>
 </div>
+
+<script>
+(() => {
+    const checkbox = document.getElementById('usar_variacoes');
+    const imagemPrincipal = document.getElementById('imagem_produto');
+    const campos = document.getElementById('variacoes_campos');
+    const botao = document.getElementById('adicionar_variacao');
+    const adicionar = () => {
+        const linha = document.createElement('div');
+        linha.className = 'grid grid-cols-[1fr_1.4fr_auto] gap-2 items-center';
+        linha.innerHTML = '<input type="text" name="variacao_nome[]" placeholder="Ex.: Tamanho 38" class="min-w-0 rounded-lg border border-gray-200 bg-white p-2 text-sm"><input type="file" name="variacao_imagem[]" accept="image/jpeg,image/png,image/webp,image/gif" class="min-w-0 rounded-lg border border-gray-200 bg-white p-2 text-xs"><button type="button" class="remover_variacao rounded-lg p-2 text-red-600 hover:bg-red-50" aria-label="Remover variação">×</button>';
+        linha.querySelector('.remover_variacao').addEventListener('click', () => linha.remove());
+        campos.appendChild(linha);
+    };
+    const alternar = () => {
+        const ativo = checkbox.checked;
+        campos.hidden = !ativo;
+        botao.hidden = !ativo;
+        imagemPrincipal.required = !ativo;
+        if (ativo && !campos.children.length) adicionar();
+    };
+    checkbox.addEventListener('change', alternar);
+    botao.addEventListener('click', adicionar);
+    alternar();
+})();
+</script>

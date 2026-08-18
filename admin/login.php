@@ -1,9 +1,8 @@
 <?php
 
 session_start();
-
-// Importamos o centralizado
-require_once "../includes/banco_ficticio.php";
+require_once __DIR__ . '/../includes/banco_ficticio.php';
+require_once __DIR__ . '/../includes/seguranca.php';
 
 $erro = null;
 
@@ -36,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } else {
 
+            regenerarSessao();
             $_SESSION['logado'] = true;
             $_SESSION['usuario_nome'] = $usuarioEncontrado['nome'];
 
@@ -55,13 +55,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Acesse o painel administrativo do MinimalShop.">
-    <title>Log In | MinimalShop Admin</title>
+    <meta name="description" content="Acesse o painel administrativo da Pixel Store.">
+    <title>Log In | Pixel Store Admin</title>
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
     <div class="page">
-        <a class="brand" href="../index.php" aria-label="MinimalShop">
+        <a class="brand" href="../index.php" aria-label="Pixel Store">
             <svg viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M57 438.312l109.536 488.72h697.336l109.536-488.72-259.176 156.816-187.856-333.088-205.352 333.088z" fill="#EC9312" />
                 <path d="M629.048 211.888c0 58.912-47.752 106.656-106.672 106.656-58.92 0-106.664-47.744-106.664-106.656 0-58.976 47.744-106.656 106.664-106.656s106.672 47.688 106.672 106.656z" fill="#CB1B5B" />
