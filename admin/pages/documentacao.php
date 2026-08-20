@@ -53,7 +53,7 @@ $docsList = docsFileList();
             <h1>Documentação do sistema</h1>
             <p>Manual completo de uso da loja virtual e do painel administrativo.</p>
         </div>
-        <a class="docs-download" href="documentacao_pdf.php" download>↓ Baixar em PDF</a>
+        <a class="docs-download" href="../docs/Documentacao.pdf" download>↓ Baixar em PDF</a>
     </div>
 
     <article class="docs-card">

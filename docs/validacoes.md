@@ -143,14 +143,19 @@ Documentação das validações **realmente implementadas** no código.
 
 | Área | O que falta |
 |------|-------------|
-| CSRF | Token em formulários |
 | CEP | Formato/máscara |
 | CNPJ | Dígitos verificadores |
 | E-mail admin | Formato (aceita qualquer string como login) |
-| Estoque | Verificação de disponibilidade |
-| Preço checkout | Revalidação server-side contra JSON |
-| Confirmação exclusão | Modal/POST |
+| Preço checkout | Revalidação server-side contra JSON (a quantidade e o estoque já são revalidados) |
 | Sanitização HTML | Descrição produto armazenada com htmlspecialchars na criação |
+
+## 9.1 Validações implementadas nesta correção
+
+| Área | O que foi implementado |
+|------|-------------|
+| CSRF | Token validado em todos os formulários POST (loja pública e admin) |
+| Estoque | Verificação de disponibilidade ao adicionar ao carrinho e ao finalizar a compra (revalidação atômica com `flock()`) |
+| Confirmação exclusão | Todas as exclusões usam POST + CSRF + `confirm()` no navegador |
 
 ---
 

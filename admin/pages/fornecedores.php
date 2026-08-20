@@ -1,19 +1,26 @@
 <?php
     require_once "../includes/banco_ficticio.php";
+    require_once "../includes/seguranca.php";
     $sucesso = null;
     $erro = null;
 
-    if (isset($_GET['excluir'])) {
-        $idExcluir = intval($_GET['excluir']);
-        if (excluirFornecedores($idExcluir)) {
-            $sucesso = "Categoria excluída com sucesso!";
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'excluir_fornecedor') {
+        if (!csrfValidar()) {
+            $erro = "Sessão expirada ou requisição inválida. Tente novamente.";
         } else {
-            $erro = "Erro ao tentar excluir a categoria.";
+            $idExcluir = intval($_POST['id'] ?? 0);
+            if (excluirFornecedores($idExcluir)) {
+                $sucesso = "Fornecedor excluído com sucesso!";
+            } else {
+                $erro = "Erro ao tentar excluir o fornecedor.";
+            }
         }
     }
 
     // Processa o envio do formulário de novo cadastro (Post)
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_fornecedor') === 'cadastrar_fornecedor' && isset($_POST['nome_fornecedor']) && !csrfValidar()) {
+        $erro = "Sessão expirada ou requisição inválida. Atualize a página e tente novamente.";
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_fornecedor') === 'cadastrar_fornecedor' && isset($_POST['nome_fornecedor'])) {
         $nome     = htmlspecialchars(trim($_POST['nome_fornecedor'] ?? ''));
         $cnpj     = htmlspecialchars(trim($_POST['cnpj_fornecedor'] ?? ''));
         $telefone = htmlspecialchars(trim($_POST['telefone_fornecedor'] ?? ''));
@@ -23,7 +30,7 @@
         $bairro   = htmlspecialchars(trim($_POST['bairro_fornecedor'] ?? ''));
         $cidade   = htmlspecialchars(trim($_POST['cidade_fornecedor'] ?? ''));
 
-        if (empty($nome) || empty($cnpj) || empty($telefone) || empty('cep') || empty($rua) || empty($numero) || empty($bairro) || empty($cidade)) {
+        if (empty($nome) || empty($cnpj) || empty($telefone) || empty($cep) || empty($rua) || empty($numero) || empty($bairro) || empty($cidade)) {
             $erro = "Todos os campos são obrigatórios para o cadastro.";
         } else {
             $fornecedoresExistentes = listarFornecedores();
@@ -96,37 +103,39 @@
         <?php endif; ?>
 
         <form action="index.php?pg=fornecedores" method="POST" class="space-y-4">
+            <?php echo csrfCampo(); ?>
+            <input type="hidden" name="acao" value="cadastrar_fornecedor">
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nome Completo</label>
-                <input type="text" name="nome_fornecedor" value="<?php echo $_POST['nome_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="nome_fornecedor" value="<?php echo htmlspecialchars($_POST['nome_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">CNPJ</label>
-                <input type="text" name="cnpj_fornecedor" value="<?php echo $_POST['cnpj_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="cnpj_fornecedor" value="<?php echo htmlspecialchars($_POST['cnpj_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Telefone</label>
-                <input type="text" name="telefone_fornecedor" value="<?php echo $_POST['telefone_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="telefone_fornecedor" value="<?php echo htmlspecialchars($_POST['telefone_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>    
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">CEP</label>
-                <input type="text" name="cep_fornecedor" value="<?php echo $_POST['cep_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="cep_fornecedor" value="<?php echo htmlspecialchars($_POST['cep_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Rua</label>
-                <input type="text" name="rua_fornecedor" value="<?php echo $_POST['rua_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="rua_fornecedor" value="<?php echo htmlspecialchars($_POST['rua_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Número</label>
-                <input type="text" name="numero_fornecedor" value="<?php echo $_POST['numero_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="numero_fornecedor" value="<?php echo htmlspecialchars($_POST['numero_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Bairro</label>
-                <input type="text" name="bairro_fornecedor" value="<?php echo $_POST['bairro_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="bairro_fornecedor" value="<?php echo htmlspecialchars($_POST['bairro_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Cidade</label>
-                <input type="text" name="cidade_fornecedor" value="<?php echo $_POST['cidade_fornecedor'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" name="cidade_fornecedor" value="<?php echo htmlspecialchars($_POST['cidade_fornecedor'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
 
             <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
@@ -156,14 +165,14 @@
                     $fornAtivo = isset($forn['ativo']) ? $forn['ativo'] : true;
                 ?>
                 <tr class="hover:bg-gray-50 transition <?php echo !$fornAtivo ? 'opacity-60 bg-gray-50/50' : ''; ?>">
-                    <td class="p-4 font-bold text-gray-700"><?php echo $forn['nome_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['cnpj_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['telefone_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['cep_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['rua_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['numero_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['bairro_fornecedor'] ?? 'N/A'; ?></td>
-                    <td class="p-4 text-sm text-gray-500"><?php echo $forn['cidade_fornecedor'] ?? 'N/A'; ?></td>
+                    <td class="p-4 font-bold text-gray-700"><?php echo htmlspecialchars($forn['nome_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['cnpj_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['telefone_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['cep_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['rua_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['numero_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['bairro_fornecedor'] ?? 'N/A'); ?></td>
+                    <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($forn['cidade_fornecedor'] ?? 'N/A'); ?></td>
                     <td class="p-4 text-sm">
                         <?php if ($fornAtivo): ?>
                             <span class="bg-green-50 text-green-700 text-[10px] font-bold px-2.5 py-1 rounded-full border border-green-100">Ativo</span>
@@ -174,12 +183,15 @@
                     
                     <td class="p-4 text-right whitespace-nowrap">
                         <div class="action-group">
-                        <a href="index.php?pg=editar_fornecedor&id=<?php echo $forn['id'] ?? ''; ?>" class="action-link action-edit" title="Editar">
+                        <a href="index.php?pg=editar_fornecedor&id=<?php echo (int) ($forn['id'] ?? 0); ?>" class="action-link action-edit" title="Editar">
                             Editar
                         </a>
-                        <a href="index.php?pg=fornecedores&excluir=<?php echo $forn['id']; ?>" class="action-link action-remove" title="Excluir Fornecedor">
-                            Remover
-                        </a>
+                        <form action="index.php?pg=fornecedores" method="POST" style="display:inline" onsubmit="return confirm('Excluir este fornecedor?');">
+                            <?php echo csrfCampo(); ?>
+                            <input type="hidden" name="acao" value="excluir_fornecedor">
+                            <input type="hidden" name="id" value="<?php echo (int) $forn['id']; ?>">
+                            <button type="submit" class="action-link action-remove" title="Excluir Fornecedor">Remover</button>
+                        </form>
                         </div>
                     </td>
                 </tr>

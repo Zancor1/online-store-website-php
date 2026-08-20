@@ -105,7 +105,7 @@ Visitante/Cliente                    Administrador
 
 **Fluxo principal (compra):** Produtos → Detalhe → Quantidade/Variação → Carrinho → Total → Checkout → Finalização (grava em `pedidos.json`).
 
-**Observação:** Não há pagamento real, cálculo de frete nem controle de estoque.
+**Observação:** Não há pagamento real nem cálculo de frete. O controle de estoque (baixa automática na compra, bloqueio de venda acima do disponível, nunca negativo) está implementado.
 
 ---
 
@@ -140,7 +140,7 @@ Arquitetura **monolítica em camadas simplificadas**:
 | Negócio | Lógica inline nos controladores + `includes/banco_ficticio.php` |
 | Dados | Arquivos JSON em `data/` |
 | Sessão | `$_SESSION` para carrinho, cliente logado, admin logado |
-| Segurança | `includes/seguranca.php` (funções CSRF — **não aplicadas nos formulários**) |
+| Segurança | `includes/seguranca.php` (funções CSRF — **aplicadas em todos os formulários POST**) |
 
 Detalhes completos em [arquitetura.md](arquitetura.md).
 
@@ -199,7 +199,7 @@ Não existe ator "Fornecedor" com login próprio — fornecedores são apenas ca
 
 A Pixel Store cumpre os requisitos acadêmicos de uma loja virtual com cadastros administrativos, front-end público estruturado e movimento de compra simulado. A persistência em JSON simplifica a implantação em ambiente XAMPP, mas impõe limitações de escalabilidade e concorrência.
 
-A documentação deste diretório descreve **exatamente** o que o código implementa, incluindo funcionalidades parciais (como ativo/inativo sem interface de toggle) e ausências deliberadas (pagamento, frete, estoque, MySQL).
+A documentação deste diretório descreve **exatamente** o que o código implementa, incluindo funcionalidades parciais (como a edição de produtos, restrita ao estoque) e ausências deliberadas (pagamento, frete, MySQL).
 
 Para verificação item a item dos requisitos da atividade, consulte [checklist-academico.md](checklist-academico.md).
 

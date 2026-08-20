@@ -58,7 +58,7 @@ Relacionamento entre Requisitos Funcionais, Casos de Uso, Arquivos e Funcionalid
 | RF19 | RNF12 (upload) |
 | RF23, RF24 | RNF10 (controle acesso) |
 | RF25 | RNF15 (regeneração sessão) |
-| Todos forms POST | RNF09 (CSRF — não atendido) |
+| Todos forms POST | RNF09 (CSRF — atendido) |
 
 ---
 

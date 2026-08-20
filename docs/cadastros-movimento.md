@@ -4,28 +4,29 @@
 
 | Entidade | Criar | Listar | Consultar | Editar | Excluir | Ativar/Desativar |
 |----------|-------|--------|-----------|--------|---------|------------------|
-| **Usuários (admin)** | SIM | SIM | SIM | SIM | SIM | PARCIAL |
+| **Usuários (admin)** | SIM | SIM | SIM | SIM | SIM | SIM |
 | **Clientes** | SIM | NÃO | PARCIAL | NÃO | NÃO | NÃO |
-| **Produtos** | SIM | SIM | SIM | NÃO | SIM | NÃO |
+| **Produtos** | SIM | SIM | SIM | PARCIAL | SIM | NÃO |
 | **Categorias** | SIM | SIM | SIM | SIM | SIM | NÃO |
 | **Fornecedores** | SIM | SIM | SIM | SIM | SIM | PARCIAL |
 | **Pedidos** | SIM | PARCIAL | NÃO | NÃO | NÃO | NÃO |
 
 ### Legenda dos status parciais
 
-**Usuários — Ativar/Desativar PARCIAL:**
+**Usuários — Ativar/Desativar:**
 - Campo `ativo` existe em `usuarios.json` e é verificado no login (`admin/login.php`)
 - Novos usuários nascem com `ativo: true`
-- **Não há interface** para alternar ativo/inativo na edição
+- Botão "Ativar"/"Desativar" disponível na listagem (`admin/pages/usuarios.php`), protegido por CSRF; um administrador não pode desativar/excluir a própria conta enquanto estiver logado com ela
 
 **Clientes — Consultar PARCIAL:**
 - Cliente consulta apenas seus próprios dados via menu (nome/email na sessão)
 - Admin **não possui** tela de listagem/edição de clientes
 - Dashboard mostra apenas contagem total
 
-**Produtos — Editar NÃO:**
-- Apenas criar (form) e excluir (GET `excluir`)
-- Não existe `editar_produto.php` funcional
+**Produtos — Editar PARCIAL:**
+- Criar (form) e excluir (POST + CSRF) completos
+- O **estoque** pode ser ajustado diretamente na listagem (campo numérico + botão "Salvar" por produto)
+- Não existe uma página `editar_produto.php` para alterar nome/preço/categoria/imagem após o cadastro
 
 **Fornecedores — Ativar/Desativar PARCIAL:**
 - Campo `ativo` gravado e exibido na listagem
@@ -130,7 +131,7 @@ O movimento de compra é a operação central do sistema do ponto de vista do cl
 - Produto simples: `"1"` (ID como string)
 - Com variação: `"1:0"` (ID + índice da variação)
 
-Função `montarItensPedido()` em `banco_ficticio.php` interpreta essa chave.
+Função `processarFinalizacaoCompra()` em `banco_ficticio.php` interpreta essa chave, confere e dá baixa no estoque de forma atômica (com `flock()` exclusivo no arquivo `produtos.json`) antes de o pedido ser salvo. A função antiga `montarItensPedido()` foi mantida no arquivo mas não é mais chamada pelo fluxo de checkout.
 
 ### 3.5 Limitações do movimento
 
@@ -138,7 +139,7 @@ Função `montarItensPedido()` em `banco_ficticio.php` interpreta essa chave.
 |----------------|--------|
 | Pagamento (Pix, cartão) | Não implementado |
 | Cálculo de frete | Não implementado |
-| Controle de estoque | Não implementado |
+| Controle de estoque | **Implementado**: baixa automática na compra, bloqueio de adição ao carrinho e de finalização acima do disponível, nunca permite estoque negativo, tratamento de concorrência via `flock()` |
 | Confirmação por e-mail | Não implementado |
 | Rastreamento de pedido (cliente) | Não implementado |
 | Gestão completa de pedidos (admin) | Parcial (só dashboard) |

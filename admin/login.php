@@ -8,6 +8,10 @@ $erro = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
+    if (!csrfValidar()) {
+        $erro = "Sessão expirada. Atualize a página e tente novamente.";
+    } else {
+
     $usuarioDigitado = htmlspecialchars(trim($_POST['usuario'] ?? ''));
     $senhaDigitada = $_POST['senha'] ?? '';
 
@@ -37,6 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             regenerarSessao();
             $_SESSION['logado'] = true;
+            $_SESSION['usuario_id'] = $usuarioEncontrado['id'];
             $_SESSION['usuario_nome'] = $usuarioEncontrado['nome'];
 
             header("Location: index.php");
@@ -46,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } else {
 
         $erro = "Usuário ou senha inválidos!";
+    }
     }
 }
 ?>
@@ -84,6 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endif; ?>
 
             <form method="POST">
+                <?php echo csrfCampo(); ?>
                 <div class="field">
                     <label for="usuario">Email or Username</label>
                     <input class="text-input" id="usuario" type="text" name="usuario" required autofocus autocomplete="username">

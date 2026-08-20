@@ -56,7 +56,9 @@ O sistema **não utiliza banco de dados relacional**. Todos os dados persistente
 | **Utilizada em** | Catálogo, detalhe, carrinho, pedidos |
 | **Relacionamentos** | Categoria (por nome); Variações (embutidas) |
 
-**Campos:** `id`, `nome`, `preco`, `categoria`, `imagem`, `descricao`, `variacoes[]`
+**Campos:** `id`, `nome`, `preco`, `categoria`, `imagem`, `descricao`, `estoque`, `variacoes[]`
+
+> **Estoque:** campo `estoque` (inteiro, nunca negativo) adicionado para controlar a quantidade disponível de cada produto. É reduzido automaticamente ao confirmar uma compra (baixa de estoque) e pode ser ajustado manualmente pelo administrador.
 
 ---
 
@@ -113,7 +115,7 @@ O sistema **não utiliza banco de dados relacional**. Todos os dados persistente
 | Cliente logado | `cliente` | `{ nome, login }` — sem senha |
 | Admin logado | `logado`, `usuario_nome` | Controle de acesso |
 | Flash messages | `mensagem_*`, `erro_*` | Feedback ao usuário |
-| CSRF | `csrf_token` | Token gerado (não utilizado) |
+| CSRF | `csrf_token` | Token gerado e validado em todos os formulários POST (login, cadastro/edição/exclusão de usuários, produtos, categorias, fornecedores, carrinho e checkout) |
 
 ---
 

@@ -1,5 +1,6 @@
 <?php
 require_once "../includes/banco_ficticio.php";
+require_once "../includes/seguranca.php";
 
 $erro = null;
 $sucesso = null;
@@ -13,22 +14,46 @@ function salvarImagemProduto($arquivo, $pastaUploads, $tiposPermitidos) {
     return 'uploads/produtos/' . $nomeArquivo;
 }
 
-if (isset($_GET['excluir'])) {
-    $idExcluir = intval($_GET['excluir']);
-
-    if (excluirProdutoAdmin($idExcluir)) {
-        $sucesso = "Produto removido com sucesso!";
+// Exclusao de produto (form POST + CSRF, nao mais link GET)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'excluir_produto') {
+    if (!csrfValidar()) {
+        $erro = "Sessao expirada ou requisicao invalida. Tente novamente.";
     } else {
-        $erro = "Erro ao tentar remover o produto.";
+        $idExcluir = intval($_POST['id'] ?? 0);
+        if (excluirProdutoAdmin($idExcluir)) {
+            $sucesso = "Produto removido com sucesso!";
+        } else {
+            $erro = "Erro ao tentar remover o produto.";
+        }
+    }
+}
+
+// Ajuste rapido de estoque (form POST + CSRF)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'atualizar_estoque') {
+    if (!csrfValidar()) {
+        $erro = "Sessao expirada ou requisicao invalida. Tente novamente.";
+    } else {
+        $idEstoque = intval($_POST['id'] ?? 0);
+        $novoEstoque = filter_input(INPUT_POST, 'novo_estoque', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if ($novoEstoque === false || $novoEstoque === null) {
+            $erro = "Informe uma quantidade de estoque valida (numero inteiro maior ou igual a zero).";
+        } elseif (atualizarEstoqueAdmin($idEstoque, $novoEstoque)) {
+            $sucesso = "Estoque atualizado com sucesso!";
+        } else {
+            $erro = "Erro ao tentar atualizar o estoque.";
+        }
     }
 }
 
 $categorias = listarCategorias();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_produto') === 'cadastrar_produto' && isset($_POST['nome_produto']) && !csrfValidar()) {
+    $erro = "Sessao expirada ou requisicao invalida. Atualize a pagina e tente novamente.";
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_produto') === 'cadastrar_produto' && isset($_POST['nome_produto'])) {
     $nome = htmlspecialchars(trim($_POST['nome_produto'] ?? ''));
     $preco = str_replace(',', '.', trim($_POST['preco_produto'] ?? ''));
     $categoriaId = intval($_POST['categoria_produto'] ?? 0);
+    $estoqueInformado = filter_input(INPUT_POST, 'estoque_produto', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
     $imagem = '';
     $descricao = htmlspecialchars(trim($_POST['descricao_produto'] ?? ''));
     $categoriaSelecionada = null;
@@ -71,6 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = "Nome, preço, categoria e descrição são obrigatórios.";
     } elseif (!is_numeric($preco) || floatval($preco) < 0) {
         $erro = "Informe um preço válido.";
+    } elseif ($estoqueInformado === false || $estoqueInformado === null) {
+        $erro = "Informe uma quantidade de estoque válida (número inteiro maior ou igual a zero).";
     } else {
         $pastaUploads = __DIR__ . '/../../uploads/produtos';
         if (!is_dir($pastaUploads) && !mkdir($pastaUploads, 0755, true)) {
@@ -98,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "categoria" => $categoriaSelecionada['nome'],
             "imagem" => $imagem,
             "descricao" => $descricao,
+            "estoque" => $estoqueInformado,
             "variacoes" => $variacoes ?? []
         ];
 
@@ -150,14 +178,21 @@ $produtos = listarProdutosAdmin();
         <?php endif; ?>
 
         <form action="index.php?pg=produtos" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <?php echo csrfCampo(); ?>
+            <input type="hidden" name="acao" value="cadastrar_produto">
             <div class="flex flex-col gap-2">
                 <label for="nome_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nome do Produto</label>
-                <input type="text" id="nome_produto" name="nome_produto" value="<?php echo $_POST['nome_produto'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="text" id="nome_produto" name="nome_produto" value="<?php echo htmlspecialchars($_POST['nome_produto'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
 
             <div class="flex flex-col gap-2">
                 <label for="preco_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Preço</label>
-                <input type="number" step="0.01" min="0" id="preco_produto" name="preco_produto" value="<?php echo $_POST['preco_produto'] ?? ''; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+                <input type="number" step="0.01" min="0" id="preco_produto" name="preco_produto" value="<?php echo htmlspecialchars($_POST['preco_produto'] ?? ''); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="estoque_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Estoque (unidades)</label>
+                <input type="number" step="1" min="0" id="estoque_produto" name="estoque_produto" value="<?php echo htmlspecialchars($_POST['estoque_produto'] ?? '0'); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
 
             <div class="flex flex-col gap-2">
@@ -166,7 +201,7 @@ $produtos = listarProdutosAdmin();
                     <option value="">Selecione uma categoria</option>
                     <?php foreach ($categorias as $cat): ?>
                         <option value="<?php echo $cat['id']; ?>" <?php echo (($_POST['categoria_produto'] ?? '') == $cat['id']) ? 'selected' : ''; ?>>
-                            <?php echo $cat['nome']; ?>
+                            <?php echo htmlspecialchars($cat['nome']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -189,7 +224,7 @@ $produtos = listarProdutosAdmin();
 
             <div class="flex flex-col gap-2">
                 <label for="descricao_produto" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Descrição</label>
-                <textarea id="descricao_produto" name="descricao_produto" required rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition"><?php echo $_POST['descricao_produto'] ?? ''; ?></textarea>
+                <textarea id="descricao_produto" name="descricao_produto" required rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition"><?php echo htmlspecialchars($_POST['descricao_produto'] ?? ''); ?></textarea>
             </div>
 
             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-100 flex items-center justify-center gap-2" <?php echo empty($categorias) ? 'disabled' : ''; ?>>
@@ -207,27 +242,43 @@ $produtos = listarProdutosAdmin();
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Categoria</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Variações</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Preço</th>
+                    <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estoque</th>
                     <th class="p-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Ações</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 <?php if (empty($produtos)): ?>
                     <tr>
-                        <td colspan="6" class="p-8 text-center text-sm text-gray-400">Nenhum produto cadastrado ainda.</td>
+                        <td colspan="7" class="p-8 text-center text-sm text-gray-400">Nenhum produto cadastrado ainda.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($produtos as $produto): ?>
+                    <?php foreach ($produtos as $produto): $estoqueProduto = (int) ($produto['estoque'] ?? 0); ?>
                         <tr class="hover:bg-gray-50 transition">
-                            <td class="p-4 text-sm text-gray-400 font-mono">#<?php echo $produto['id']; ?></td>
-                            <td class="p-4 font-bold text-gray-700"><?php echo $produto['nome']; ?></td>
-                            <td class="p-4 text-sm text-gray-500"><?php echo $produto['categoria'] ?? 'Sem categoria'; ?></td>
+                            <td class="p-4 text-sm text-gray-400 font-mono">#<?php echo (int) $produto['id']; ?></td>
+                            <td class="p-4 font-bold text-gray-700"><?php echo htmlspecialchars($produto['nome']); ?></td>
+                            <td class="p-4 text-sm text-gray-500"><?php echo htmlspecialchars($produto['categoria'] ?? 'Sem categoria'); ?></td>
                             <td class="p-4 text-sm text-gray-500"><?php echo empty($produto['variacoes']) ? 'Produto único' : count($produto['variacoes']) . ' opções'; ?></td>
                             <td class="p-4 text-sm text-gray-500">R$ <?php echo number_format(floatval($produto['preco'] ?? 0), 2, ',', '.'); ?></td>
+                            <td class="p-4 text-sm">
+                                <form action="index.php?pg=produtos" method="POST" class="flex items-center gap-1">
+                                    <?php echo csrfCampo(); ?>
+                                    <input type="hidden" name="acao" value="atualizar_estoque">
+                                    <input type="hidden" name="id" value="<?php echo (int) $produto['id']; ?>">
+                                    <input type="number" name="novo_estoque" min="0" step="1" value="<?php echo $estoqueProduto; ?>" class="w-20 rounded-lg border <?php echo $estoqueProduto <= 0 ? 'border-red-300 text-red-600' : 'border-gray-200'; ?> p-1.5 text-sm">
+                                    <button type="submit" class="action-link action-edit" title="Salvar estoque">Salvar</button>
+                                </form>
+                                <?php if ($estoqueProduto <= 0): ?>
+                                    <span class="mt-1 inline-block text-[10px] font-bold text-red-600">Esgotado</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="p-4 text-right">
                                 <div class="action-group">
-                                    <a href="index.php?pg=produtos&excluir=<?php echo $produto['id']; ?>" class="action-link action-remove" title="Remover Produto">
-                                        Remover
-                                    </a>
+                                    <form action="index.php?pg=produtos" method="POST" onsubmit="return confirm('Remover este produto?');">
+                                        <?php echo csrfCampo(); ?>
+                                        <input type="hidden" name="acao" value="excluir_produto">
+                                        <input type="hidden" name="id" value="<?php echo (int) $produto['id']; ?>">
+                                        <button type="submit" class="action-link action-remove" title="Remover Produto">Remover</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

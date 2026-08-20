@@ -19,7 +19,7 @@
 |-----------|-----------|
 | Sem pagamento | Checkout salva pedido "pendente" sem cobrança |
 | Sem frete | Endereço coletado mas frete não calculado |
-| Sem estoque | Quantidade ilimitada; sem baixa |
+| Controle de estoque | **Implementado** (baixa automática, bloqueio acima do disponível, nunca negativo, `flock()` para concorrência) |
 | Sem cupom/desconto | Não encontrado no código |
 | Sem rastreamento pedido (cliente) | Cliente não vê histórico |
 
@@ -27,17 +27,17 @@
 
 | Limitação | Evidência |
 |-----------|-----------|
-| Produtos sem edição | Não existe `editar_produto.php` |
+| Produtos sem edição completa | Não existe `editar_produto.php`; apenas o estoque é editável na listagem |
 | Clientes sem gestão admin | Apenas contagem no dashboard |
 | Pedidos sem gestão completa | Só últimos 5 no dashboard |
-| Ativo/inativo sem UI | Campo existe, toggle ausente |
+| Ativo/inativo de usuários | **Implementado** (toggle na listagem, com proteção contra autodesativação) |
 
 ### Segurança
 
 | Limitação | Evidência |
 |-----------|-----------|
-| CSRF não aplicado | Funções em `seguranca.php` não usadas |
-| Exclusão via GET | Links diretos em admin |
+| CSRF | **Implementado**: `csrfCampo()`/`csrfValidar()` usados em todos os formulários POST |
+| Exclusão via GET | **Corrigido**: todas as exclusões agora usam POST + CSRF |
 | Sem recuperação de senha | Não implementado |
 | Sem rate limiting login | Tentativas ilimitadas |
 
@@ -76,11 +76,11 @@
 
 ### Prioridade alta
 
-1. **Implementar CSRF** em todos os formulários POST
-2. **Converter exclusões para POST** com confirmação
-3. **Criar tela editar produto** com re-upload opcional de imagem
-4. **Corrigir bugs** em usuarios.php e fornecedores.php
-5. **Remover ou consertar** arquivos órfãos (editar_fornecedores.php, etc.)
+1. ~~**Implementar CSRF** em todos os formulários POST~~ — feito
+2. ~~**Converter exclusões para POST** com confirmação~~ — feito
+3. **Criar tela editar produto** completa (nome, preço, categoria, imagem), hoje só o estoque é editável
+4. **Corrigir bugs** em usuarios.php e fornecedores.php — feito (usuarios.php); fornecedores.php revisado (CNPJ duplicado)
+5. **Remover ou consertar** arquivos órfãos (`editar_categorias.php`, `editar_fornecedores.php`, `fornecedores_excluir.php`) — não são referenciados por nenhum link do sistema e continuam inertes; mantidos por não serem necessários à correção solicitada, mas recomenda-se removê-los ou consertá-los depois
 
 ### Prioridade média
 
@@ -89,14 +89,14 @@
 8. Módulo admin de **clientes** (listar, desativar)
 9. **Vincular produto a fornecedor** via ID
 10. **Vincular produto a categoria** via ID (não string)
-11. UI para **toggle ativo/inativo** em usuários e fornecedores
+11. ~~UI para **toggle ativo/inativo** em usuários~~ — feito para usuários; fornecedores ainda sem toggle
 12. **Recuperação de senha** por e-mail
 
 ### Prioridade baixa / expansão
 
 13. Integração com **gateway de pagamento** (Pix, cartão)
 14. **Cálculo de frete** por CEP
-15. **Controle de estoque**
+15. ~~**Controle de estoque**~~ — feito
 16. Notificações por **e-mail** (pedido confirmado)
 17. **API REST** para mobile
 18. Testes automatizados (PHPUnit)
@@ -109,8 +109,10 @@
 
 | Funcionalidade | O que existe | O que falta |
 |----------------|--------------|-------------|
-| Ativo/inativo | Campo JSON + exibição + check no login | UI para alternar |
+| Ativo/inativo (usuários) | Campo JSON + exibição + check no login + toggle na listagem | Nada — completo |
+| Ativo/inativo (fornecedores) | Campo JSON + exibição | UI para alternar |
 | Listagem pedidos | Últimos 5 no dashboard | Módulo completo |
-| CSRF | Funções prontas | Integração nos forms |
+| CSRF | Funções prontas e integradas em todos os forms | Nada — completo |
 | Documentação | Manual in-app + PDF + docs/ | Sincronizar PDF com docs acadêmica |
 | Variações produto | Cadastro e compra | Edição de variações em produto existente |
+| Controle de estoque | Baixa automática, bloqueio de carrinho/checkout, ajuste manual pelo admin | Histórico/log de movimentações de estoque |

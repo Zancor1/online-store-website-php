@@ -1,19 +1,26 @@
 <?php
 require_once "../includes/banco_ficticio.php";
+require_once "../includes/seguranca.php";
 $erro = null;
 $sucesso = null;
 
-if (isset($_GET['excluir'])) {
-    $idExcluir = intval($_GET['excluir']);
-    if (excluirCategoria($idExcluir)) {
-        $sucesso = "Categoria excluída com sucesso!";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'excluir_categoria') {
+    if (!csrfValidar()) {
+        $erro = "Sessão expirada ou requisição inválida. Tente novamente.";
     } else {
-        $erro = "Erro ao tentar excluir a categoria.";
+        $idExcluir = intval($_POST['id'] ?? 0);
+        if (excluirCategoria($idExcluir)) {
+            $sucesso = "Categoria excluída com sucesso!";
+        } else {
+            $erro = "Erro ao tentar excluir a categoria.";
+        }
     }
 }
 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_categoria') === 'cadastrar_categoria' && isset($_POST['nome_categoria']) && !csrfValidar()) {
+    $erro = "Sessão expirada ou requisição inválida. Atualize a página e tente novamente.";
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? 'cadastrar_categoria') === 'cadastrar_categoria' && isset($_POST['nome_categoria'])) {
     $nome = htmlspecialchars(trim($_POST['nome_categoria'] ?? ''));
 
     if (empty($nome)) {
@@ -74,9 +81,11 @@ $categorias = listarCategorias();
         <?php endif; ?>
 
         <form action="index.php?pg=categorias" method="POST" class="space-y-4">
+            <?php echo csrfCampo(); ?>
+            <input type="hidden" name="acao" value="cadastrar_categoria">
             <div class="flex flex-col gap-2">
                 <label for="nome_categoria" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nome da Categoria</label>
-                <input type="text" id="nome_categoria" name="nome_categoria" value="<?php echo $_POST['nome_categoria'] ?? ''; ?>" required placeholder="Ex: Componentes, Monitores..."
+                <input type="text" id="nome_categoria" name="nome_categoria" value="<?php echo htmlspecialchars($_POST['nome_categoria'] ?? ''); ?>" required placeholder="Ex: Componentes, Monitores..."
                        class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
             </div>
             <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
@@ -102,16 +111,19 @@ $categorias = listarCategorias();
                 <?php else: ?>
                     <?php foreach ($categorias as $cat): ?>
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 text-sm text-gray-400 font-mono">#<?php echo $cat['id']; ?></td>
-                        <td class="p-4 font-bold text-gray-700"><?php echo $cat['nome']; ?></td>
+                        <td class="p-4 text-sm text-gray-400 font-mono">#<?php echo (int) $cat['id']; ?></td>
+                        <td class="p-4 font-bold text-gray-700"><?php echo htmlspecialchars($cat['nome']); ?></td>
                         <td class="p-4 text-right">
                             <div class="action-group">
-                            <a href="index.php?pg=editar_categoria&id=<?php echo $cat['id']; ?>" class="action-link action-edit" title="Editar">
+                            <a href="index.php?pg=editar_categoria&id=<?php echo (int) $cat['id']; ?>" class="action-link action-edit" title="Editar">
                                 Editar
                             </a>
-                            <a href="index.php?pg=categorias&excluir=<?php echo $cat['id']; ?>" class="action-link action-remove" title="Excluir Categoria">
-                                Remover
-                            </a>
+                            <form action="index.php?pg=categorias" method="POST" style="display:inline" onsubmit="return confirm('Excluir esta categoria?');">
+                                <?php echo csrfCampo(); ?>
+                                <input type="hidden" name="acao" value="excluir_categoria">
+                                <input type="hidden" name="id" value="<?php echo (int) $cat['id']; ?>">
+                                <button type="submit" class="action-link action-remove" title="Excluir Categoria">Remover</button>
+                            </form>
                             </div>
                         </td>
                     </tr>

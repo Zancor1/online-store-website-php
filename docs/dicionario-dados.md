@@ -47,6 +47,7 @@ Para cada campo: tipo lógico conforme uso no PHP/JSON.
 | Produto | categoria | string | Sim | Não | — | Nome da categoria (cópia) | `"Perifericos"` |
 | Produto | imagem | string (URL/path) | Sim | Não | — | URL externa ou path local | `"uploads/produtos/abc.jpg"` |
 | Produto | descricao | string | Sim | Não | — | Descrição do produto | `"Mouse gamer ergonomico..."` |
+| Produto | estoque | inteiro | Sim | Não | `0` | Quantidade disponível em estoque; nunca negativo, decrementado na finalização da compra | `20` |
 | Produto | variacoes | array | Não | Não | `[]` | Lista de variações | ver abaixo |
 
 ### 4.1 Objeto Variação (dentro de produto.variacoes[])

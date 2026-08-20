@@ -13,6 +13,7 @@ if (!isset($_SESSION['logado'])) {
 // LOGOFF: Se o link de 'sair' for clicado (index.php?sair=true)
 if (isset($_GET['sair'])) {
     // Destrói todas as variáveis gravadas na sessão (apaga o crachá)
+    $_SESSION = [];
     session_destroy();
     // Manda de volta para a tela de login
     header('Location: login.php');
@@ -112,7 +113,8 @@ $navItems = [
                 <section class="page-content">
                     <?php
                     // Monta o caminho do arquivo de forma dinâmica (ex: pages/produtos.php)
-                    $arquivo = "pages/" . $pagina . ".php";
+                    // basename() evita travessia de diretorio (ex: ?pg=../../includes/banco_ficticio)
+                    $arquivo = "pages/" . basename($pagina) . ".php";
 
                     // Verifica se o arquivo físico existe dentro da pasta antes de chamá-lo
                     if (file_exists($arquivo)) {

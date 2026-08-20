@@ -6,6 +6,15 @@ require_once 'includes/seguranca.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
 
+    // Protecao CSRF: toda acao que altera dados exige um token valido.
+    if (!csrfValidar()) {
+        $_SESSION['mensagem_carrinho'] = 'Sua sessao expirou ou a requisicao e invalida. Tente novamente.';
+        $_SESSION['erro_login'] = 'Sua sessao expirou ou a requisicao e invalida. Tente novamente.';
+        $voltarPara = in_array($acao, ['login_cliente', 'registrar_cliente'], true) ? 'login' : ($acao === 'finalizar' ? 'checkout' : 'carrinho');
+        header('Location: index.php?pg=' . $voltarPara);
+        exit;
+    }
+
     if (in_array($acao, ['login_cliente', 'registrar_cliente'], true)) {
         $login = trim($_POST['login'] ?? '');
         $senha = $_POST['senha'] ?? '';
@@ -63,7 +72,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         $chaveItem = !empty($variacoes) ? $id . ':' . $variacao : (string) $id;
-        $carrinho[$chaveItem] = min(($carrinho[$chaveItem] ?? 0) + $quantidade, 99);
+
+        // Baixa de estoque so acontece na finalizacao da compra, mas o
+        // carrinho nunca pode acumular mais unidades do que ha disponivel.
+        $estoqueDisponivel = (int) ($produto['estoque'] ?? 0);
+        if ($estoqueDisponivel <= 0) {
+            $_SESSION['mensagem_carrinho'] = 'Este produto esta sem estoque no momento.';
+            header('Location: index.php?pg=detalhe&id=' . $id);
+            exit;
+        }
+
+        $quantidadeDesejada = ($carrinho[$chaveItem] ?? 0) + $quantidade;
+        if ($quantidadeDesejada > $estoqueDisponivel) {
+            $_SESSION['mensagem_carrinho'] = 'Estoque insuficiente. Disponivel: ' . $estoqueDisponivel . ' unidade(s).';
+            header('Location: index.php?pg=detalhe&id=' . $id);
+            exit;
+        }
+
+        $carrinho[$chaveItem] = min($quantidadeDesejada, 99);
         $_SESSION['carrinho'] = $carrinho;
         $_SESSION['mensagem_carrinho'] = 'Produto adicionado ao carrinho.';
         header('Location: index.php?pg=carrinho');
@@ -95,12 +121,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($carrinho)) {
-            $resumo = montarItensPedido($carrinho);
+            // Confere e da baixa no estoque de forma atomica (trava exclusiva
+            // no arquivo de produtos), bloqueando a compra caso o estoque
+            // tenha ficado insuficiente entre a adicao ao carrinho e o
+            // fechamento do pedido (inclusive em compras concorrentes).
+            $resultado = processarFinalizacaoCompra($carrinho);
+
+            if (!$resultado['ok']) {
+                $_SESSION['mensagem_carrinho'] = $resultado['erro'];
+                header('Location: index.php?pg=carrinho');
+                exit;
+            }
+
             salvarPedido([
                 'cliente' => $_SESSION['cliente'],
                 'endereco' => ['endereco' => $endereco, 'cidade' => $cidade, 'cep' => $cep],
-                'itens' => $resumo['itens'],
-                'total' => $resumo['total'],
+                'itens' => $resultado['itens'],
+                'total' => $resultado['total'],
                 'status' => 'pendente',
                 'criado_em' => date('c'),
             ]);
@@ -160,7 +197,7 @@ $clienteLogado = $_SESSION['cliente'] ?? null;
                         <summary class="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full border border-blue-400/50 bg-blue-500/10 text-xl text-blue-300 transition hover:bg-blue-500 hover:text-white [&::-webkit-details-marker]:hidden" title="Abrir menu da conta" aria-label="Abrir menu da conta"><i class="ph ph-user"></i></summary>
                         <div class="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-xl border border-white/10 bg-[#202636] shadow-2xl shadow-black/50">
                             <div class="border-b border-white/10 px-5 py-4"><p class="font-extrabold text-white"><?php echo htmlspecialchars($clienteLogado['nome']); ?></p><p class="mt-1 text-sm text-slate-400"><?php echo htmlspecialchars($clienteLogado['login']); ?></p></div>
-                            <div class="p-2"><button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-white/10"><i class="ph ph-user-circle text-xl"></i> Conta</button><form method="post" action="index.php"><input type="hidden" name="acao" value="logout"><button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-red-500/15 hover:text-red-200"><i class="ph ph-sign-out text-xl"></i> Desconectar</button></form></div>
+                            <div class="p-2"><button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-white/10"><i class="ph ph-user-circle text-xl"></i> Conta</button><form method="post" action="index.php"><?php echo csrfCampo(); ?><input type="hidden" name="acao" value="logout"><button type="submit" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold text-white transition hover:bg-red-500/15 hover:text-red-200"><i class="ph ph-sign-out text-xl"></i> Desconectar</button></form></div>
                         </div>
                     </details>
                 <?php else: ?>

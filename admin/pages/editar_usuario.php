@@ -1,28 +1,34 @@
 <?php
     require_once "../includes/banco_ficticio.php";
+    require_once "../includes/seguranca.php";
     $sucesso = null;
     $erro = null;
 
-    $id = $_GET['id'] ?? null;
-    $usuario = buscarUsuarioPorId($id);
+    $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+    $usuario = $id ? buscarUsuarioPorId($id) : null;
 
     if (!$usuario) {
-        echo "<h2 class='text-xl font-bold text-red-500 p-6>Administrador não encontrado!</h2>";
+        echo "<h2 class='text-xl font-bold text-red-500 p-6'>Administrador não encontrado!</h2>";
         exit;
     }
-     if($_SERVER['REQUEST_METHOD'] === 'POST') {
+     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!csrfValidar()) {
+            $erro = "Sessão expirada ou requisição inválida. Atualize a página e tente novamente.";
+        } else {
         $nome = htmlspecialchars((trim($_POST['nome_usuario'] ?? '')));
         $login = htmlspecialchars((trim($_POST['login_usuario'] ?? '')));
         $senhaNova = $_POST['senha_usuario'] ?? '';
 
         if (empty($nome) || empty($login)) {
             $erro = "Nome e Usuário de Login são campos obrigatórios.";
+        } elseif (!empty($senhaNova) && strlen($senhaNova) < 6) {
+            $erro = "A nova senha deve ter pelo menos 6 caracteres.";
         } else {
             $todosUsuarios = listarUsuarios();
             $loginDuplicado = false;
 
             foreach ($todosUsuarios as $u) {
-                if (strtolower($u['login']) === strtolower($login) && $u ['id'] != $id) {
+                if (strtolower($u['login']) === strtolower($login) && $u['id'] != $id) {
                     $loginDuplicado = true;
                     break;
                 }
@@ -39,11 +45,12 @@
                 }
                 if (atualizarUsuario($id, $dadosParaAtualizar)) {
                     $sucesso = "Dados do administrador atualizados com sucesso!";
-                    $usuario = buscarProdutoPorId($id);
+                    $usuario = buscarUsuarioPorId($id);
                 } else {
-                    $eero = "Falha técnica ao salvar as alterações.";
+                    $erro = "Falha técnica ao salvar as alterações.";
                 }
             }
+        }
         }
      }
 ?>
@@ -53,7 +60,7 @@
         <i class="ph ph-arrow-left"></i> Voltar para a equipe
     </a>
     <h1 class="text-3xl font-black text-gray-800">Editar Administrador</h1>
-    <p class="text-gray-500 text-sm">Modifique as credenciais de @<?php echo $usuario['login']; ?>.</p>
+    <p class="text-gray-500 text-sm">Modifique as credenciais de @<?php echo htmlspecialchars($usuario['login']); ?>.</p>
 </div>
 
 <div class="bg-white border border-gray-100 rounded-3xl p-8 max-w-xl shadow-sm">
@@ -72,16 +79,17 @@
         </div>
     <?php endif; ?>
 
-    <form action="index.php?pg=editar_usuario&id=<?php echo $usuario['id']; ?>" method="POST" class="space-y-6">
-        
+    <form action="index.php?pg=editar_usuario&id=<?php echo (int) $usuario['id']; ?>" method="POST" class="space-y-6">
+        <?php echo csrfCampo(); ?>
+
         <div class="flex flex-col gap-2">
             <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nome Completo</label>
-            <input type="text" name="nome_usuario" value="<?php echo $usuario['nome']; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+            <input type="text" name="nome_usuario" value="<?php echo htmlspecialchars($usuario['nome']); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
         </div>
 
         <div class="flex flex-col gap-2">
             <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Usuário de Login</label>
-            <input type="text" name="login_usuario" value="<?php echo $usuario['login']; ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
+            <input type="text" name="login_usuario" value="<?php echo htmlspecialchars($usuario['login']); ?>" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-600 focus:bg-white transition">
         </div>
 
         <div class="flex flex-col gap-2">

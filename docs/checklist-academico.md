@@ -21,10 +21,11 @@ Verificação dos requisitos da atividade contra o sistema real.
 | **Cadastro (geral)** | 🟢 | CRUD em categorias, usuarios, fornecedores; create em produtos e clientes |
 | **Listagem** | 🟢 | Tabelas admin + catálogo público |
 | **Criação** | 🟢 | Forms em admin e registro cliente |
-| **Edição** | 🟡 | Categorias, usuarios, fornecedores: SIM. Produtos, clientes: NÃO |
-| **Exclusão** | 🟢 | GET excluir em admin (categorias, produtos, usuarios, fornecedores) |
-| **Ativo/inativo** | 🟡 | Campo existe; verificado no login admin; sem UI toggle |
-| **Movimento (compra)** | 🟢 | Fluxo completo: produto → carrinho → checkout → pedidos.json |
+| **Edição** | 🟡 | Categorias, usuarios, fornecedores: SIM. Produtos: parcial (estoque editável, demais campos não). Clientes: NÃO |
+| **Exclusão** | 🟢 | POST + CSRF em admin (categorias, produtos, usuarios, fornecedores) |
+| **Ativo/inativo** | 🟢 | Campo existe; verificado no login admin; toggle Ativar/Desativar disponível na listagem de usuários |
+| **Movimento (compra)** | 🟢 | Fluxo completo: produto → carrinho → checkout → pedidos.json, com baixa de estoque |
+| **Controle de estoque** | 🟢 | Baixa automática na compra, bloqueio de carrinho/checkout acima do disponível, nunca negativo, concorrência tratada com `flock()` |
 | **Front-end público** | 🟢 | index.php + pages/ |
 | **Página inicial** | 🟢 | Hero em index.php (?pg=inicio) |
 | **Contato** | 🟢 | pages/contato.php com mailto |
@@ -36,6 +37,7 @@ Verificação dos requisitos da atividade contra o sistema real.
 | **Tabelas de entidades** | 🟢 | modelo-dados.md + ER diagram |
 | **Dicionário de dados** | 🟢 | dicionario-dados.md com todos os JSON |
 | **Documentação explicativa** | 🟢 | Pasta docs/ completa + admin/documentacao.php |
+| **Segurança (CSRF)** | 🟢 | Token validado em todos os formulários POST (público e admin) |
 
 ---
 
@@ -43,9 +45,9 @@ Verificação dos requisitos da atividade contra o sistema real.
 
 | Entidade | Criar | Listar | Editar | Excluir | Ativo/Inativo | Status geral |
 |----------|-------|--------|--------|---------|---------------|--------------|
-| Usuários admin | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🟢 |
+| Usuários admin | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 |
 | Clientes | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟡 |
-| Produtos | 🟢 | 🟢 | 🔴 | 🟢 | 🔴 | 🟡 |
+| Produtos | 🟢 | 🟢 | 🟡 | 🟢 | 🔴 | 🟢 |
 | Categorias | 🟢 | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 |
 | Fornecedores | 🟢 | 🟢 | 🟢 | 🟢 | 🟡 | 🟢 |
 | Pedidos | 🟢 | 🟡 | 🔴 | 🔴 | 🔴 | 🟡 |
@@ -82,20 +84,19 @@ Verificação dos requisitos da atividade contra o sistema real.
 
 ### Totalmente atendidos (🟢)
 - Front-end público completo
-- Movimento de compra simulado
-- CRUD de categorias, usuarios admin, fornecedores
-- Cadastro e listagem de produtos
+- Movimento de compra simulado, com baixa de estoque real
+- CRUD de categorias, usuarios admin (incluindo ativar/desativar), fornecedores
+- Cadastro, listagem e controle de estoque de produtos
 - Documentação acadêmica estruturada
 - Diagramas UML/sequência/atividades
 - Dicionário de dados
 - Manuais de uso
+- Proteção CSRF em todos os formulários que alteram dados
 
 ### Parcialmente atendidos (🟡)
-- Edição de produtos (não existe)
+- Edição de produtos (só estoque é editável; nome/preço/categoria/imagem não têm tela de edição após o cadastro)
 - Gestão de clientes no admin (não existe)
-- Ativo/inativo (campo sem UI)
 - Gestão de pedidos (só dashboard)
-- Segurança CSRF (código morto)
 - CRUD clientes (só auto-registro)
 
 ### Não atendidos (🔴)
